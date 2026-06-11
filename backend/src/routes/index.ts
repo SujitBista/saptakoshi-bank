@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { APP_NAME } from "@saptakoshi/shared";
+import dbTestRoutes from "./db-test.routes";
 import healthRoutes from "./health.routes";
 
 const router = Router();
@@ -9,5 +10,6 @@ router.get("/", (_req, res) => {
 });
 
 router.use("/health", healthRoutes);
+router.use("/db-test", dbTestRoutes);
 
 export default router;
