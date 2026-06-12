@@ -16,7 +16,7 @@ export default function AdminLoginPage() {
       </div>
 
       <div className="flex min-h-[calc(100vh-52px)] flex-col lg:flex-row">
-        <section className="relative flex flex-1 flex-col justify-center bg-brand-blue px-6 py-12 text-white lg:px-12 lg:py-16">
+        <section className="relative hidden flex-1 flex-col justify-center bg-brand-blue px-6 py-12 text-white lg:flex lg:px-12 lg:py-16">
           <div
             className="pointer-events-none absolute inset-0 opacity-10"
             aria-hidden="true"
