@@ -2,25 +2,56 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #323031;
+  --skdbl-blue: #007ab5;
+  --skdbl-blue-dark: #005f8f;
+  --skdbl-blue-75: #409bc7;
+  --skdbl-blue-50: #80bcda;
+  --skdbl-blue-25: #bfdeec;
+  --skdbl-blue-15: #d9ebf4;
+  --skdbl-blue-05: #f2f8fb;
+  --skdbl-green: #74b53c;
+  --skdbl-green-dark: #5c912f;
+  --skdbl-green-75: #97c76d;
+  --skdbl-green-15: #eaf4e2;
+  --skdbl-green-05: #f8fbf5;
+  --skdbl-yellow: #fff012;
+  --skdbl-black: #323031;
+  --skdbl-black-75: #656464;
+  --skdbl-black-50: #989798;
+  --skdbl-black-15: #e0e0e0;
+  --skdbl-black-05: #f5f5f5;
+  --skdbl-header-bg: #eeeeee;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --color-brand-blue: var(--skdbl-blue);
+  --color-brand-blue-dark: var(--skdbl-blue-dark);
+  --color-brand-blue-75: var(--skdbl-blue-75);
+  --color-brand-blue-50: var(--skdbl-blue-50);
+  --color-brand-blue-25: var(--skdbl-blue-25);
+  --color-brand-blue-15: var(--skdbl-blue-15);
+  --color-brand-blue-05: var(--skdbl-blue-05);
+  --color-brand-green: var(--skdbl-green);
+  --color-brand-green-dark: var(--skdbl-green-dark);
+  --color-brand-green-75: var(--skdbl-green-75);
+  --color-brand-green-15: var(--skdbl-green-15);
+  --color-brand-green-05: var(--skdbl-green-05);
+  --color-brand-yellow: var(--skdbl-yellow);
+  --color-brand-black: var(--skdbl-black);
+  --color-brand-black-75: var(--skdbl-black-75);
+  --color-brand-black-50: var(--skdbl-black-50);
+  --color-brand-black-15: var(--skdbl-black-15);
+  --color-brand-black-05: var(--skdbl-black-05);
+  --font-sans: var(--font-geist-sans), system-ui, -apple-system, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
 }
