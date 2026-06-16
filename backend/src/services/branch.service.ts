@@ -91,12 +91,45 @@ async function ensureUniqueBranchCode(
   }
 }
 
+export const DEFAULT_BRANCH_PAGE = 1;
+export const DEFAULT_BRANCH_PAGE_SIZE = 10;
+export const MAX_BRANCH_PAGE_SIZE = 100;
+
+export interface BranchListResult {
+  branches: BranchDto[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 export async function listBranches(filters: {
   branchCode?: string;
   branchName?: string;
-}): Promise<BranchDto[]> {
-  const rows = await branchRepository.findAll(filters);
-  return rows.map(toBranchDto);
+  page?: number;
+  limit?: number;
+}): Promise<BranchListResult> {
+  const page = filters.page ?? DEFAULT_BRANCH_PAGE;
+  const limit = filters.limit ?? DEFAULT_BRANCH_PAGE_SIZE;
+
+  const [total, rows] = await Promise.all([
+    branchRepository.countAll(filters),
+    branchRepository.findAll(filters, { page, limit }),
+  ]);
+
+  const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
+
+  return {
+    branches: rows.map(toBranchDto),
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages,
+    },
+  };
 }
 
 export async function getBranchById(id: number): Promise<BranchDto> {

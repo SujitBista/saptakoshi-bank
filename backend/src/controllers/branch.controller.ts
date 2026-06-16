@@ -2,11 +2,32 @@ import type { Request, Response } from "express";
 import {
   BranchError,
   createBranch,
+  DEFAULT_BRANCH_PAGE,
+  DEFAULT_BRANCH_PAGE_SIZE,
   getBranchById,
   listBranches,
+  MAX_BRANCH_PAGE_SIZE,
   updateBranch,
   updateBranchStatus,
 } from "../services/branch.service";
+
+function parsePositiveInt(
+  value: unknown,
+  fallback: number,
+  max?: number
+): number {
+  const parsed = Number(value);
+
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    return fallback;
+  }
+
+  if (max !== undefined) {
+    return Math.min(parsed, max);
+  }
+
+  return parsed;
+}
 
 function handleBranchError(error: unknown, res: Response): void {
   if (error instanceof BranchError) {
@@ -23,9 +44,15 @@ export async function getBranches(req: Request, res: Response): Promise<void> {
       typeof req.query.branchCode === "string" ? req.query.branchCode : undefined;
     const branchName =
       typeof req.query.branchName === "string" ? req.query.branchName : undefined;
+    const page = parsePositiveInt(req.query.page, DEFAULT_BRANCH_PAGE);
+    const limit = parsePositiveInt(
+      req.query.limit,
+      DEFAULT_BRANCH_PAGE_SIZE,
+      MAX_BRANCH_PAGE_SIZE
+    );
 
-    const branches = await listBranches({ branchCode, branchName });
-    res.json({ branches });
+    const result = await listBranches({ branchCode, branchName, page, limit });
+    res.json(result);
   } catch (error) {
     handleBranchError(error, res);
   }

@@ -17,6 +17,36 @@ export interface BranchFilters {
   branchName?: string;
 }
 
+export interface BranchPagination {
+  page: number;
+  limit: number;
+}
+
+interface FilterClause {
+  whereClause: string;
+  params: string[];
+}
+
+function buildFilterClause(filters: BranchFilters): FilterClause {
+  const conditions: string[] = [];
+  const params: string[] = [];
+
+  if (filters.branchCode?.trim()) {
+    params.push(`%${filters.branchCode.trim()}%`);
+    conditions.push(`branch_code ILIKE $${params.length}`);
+  }
+
+  if (filters.branchName?.trim()) {
+    params.push(`%${filters.branchName.trim()}%`);
+    conditions.push(`branch_name ILIKE $${params.length}`);
+  }
+
+  const whereClause =
+    conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+  return { whereClause, params };
+}
+
 export interface CreateBranchInput {
   branchCode: string;
   branchName: string;
@@ -35,29 +65,37 @@ export interface UpdateBranchInput {
   isActive: boolean;
 }
 
-export async function findAll(filters: BranchFilters = {}): Promise<BranchRow[]> {
-  const conditions: string[] = [];
-  const params: string[] = [];
+export async function countAll(filters: BranchFilters = {}): Promise<number> {
+  const { whereClause, params } = buildFilterClause(filters);
+  const rows = await query<{ count: string }>(
+    `SELECT COUNT(*)::text AS count FROM branches ${whereClause}`,
+    params
+  );
 
-  if (filters.branchCode?.trim()) {
-    params.push(`%${filters.branchCode.trim()}%`);
-    conditions.push(`branch_code ILIKE $${params.length}`);
+  return Number(rows[0]?.count ?? 0);
+}
+
+export async function findAll(
+  filters: BranchFilters = {},
+  pagination?: BranchPagination
+): Promise<BranchRow[]> {
+  const { whereClause, params } = buildFilterClause(filters);
+  const queryParams: Array<string | number> = [...params];
+
+  let paginationClause = "";
+
+  if (pagination) {
+    const offset = (pagination.page - 1) * pagination.limit;
+    queryParams.push(pagination.limit, offset);
+    paginationClause = ` LIMIT $${queryParams.length - 1} OFFSET $${queryParams.length}`;
   }
-
-  if (filters.branchName?.trim()) {
-    params.push(`%${filters.branchName.trim()}%`);
-    conditions.push(`branch_name ILIKE $${params.length}`);
-  }
-
-  const whereClause =
-    conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
   return query<BranchRow>(
     `SELECT id, branch_code, branch_name, address, phone_number, email, is_active, created_at, updated_at
      FROM branches
      ${whereClause}
-     ORDER BY created_at DESC`,
-    params
+     ORDER BY created_at DESC, id DESC${paginationClause}`,
+    queryParams
   );
 }
 

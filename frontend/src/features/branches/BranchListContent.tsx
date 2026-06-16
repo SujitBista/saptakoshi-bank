@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
+import { Pagination } from "@/components/ui/Pagination";
 import {
   Table,
   TableBody,
@@ -19,7 +20,15 @@ import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { ApiError } from "@/lib/api-client";
 import { fetchBranches, formatBranchDate } from "@/features/branches/api";
 import { DisableBranchDialog } from "@/features/branches/DisableBranchDialog";
-import type { Branch } from "@/features/branches/types";
+import type { Branch, BranchPagination } from "@/features/branches/types";
+import { DEFAULT_BRANCH_PAGE, DEFAULT_BRANCH_PAGE_SIZE } from "@/features/branches/types";
+
+const INITIAL_PAGINATION: BranchPagination = {
+  page: DEFAULT_BRANCH_PAGE,
+  limit: DEFAULT_BRANCH_PAGE_SIZE,
+  total: 0,
+  totalPages: 0,
+};
 
 export function BranchListContent() {
   const { user, isReady, handleLogout } = useAdminAuth();
@@ -30,6 +39,8 @@ export function BranchListContent() {
     branchCode: "",
     branchName: "",
   });
+  const [page, setPage] = useState(DEFAULT_BRANCH_PAGE);
+  const [pagination, setPagination] = useState<BranchPagination>(INITIAL_PAGINATION);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
@@ -40,8 +51,17 @@ export function BranchListContent() {
     setError(null);
 
     try {
-      const data = await fetchBranches(appliedFilters);
-      setBranches(data);
+      const data = await fetchBranches({
+        ...appliedFilters,
+        page,
+        limit: DEFAULT_BRANCH_PAGE_SIZE,
+      });
+      setBranches(data.branches);
+      setPagination(data.pagination);
+
+      if (data.pagination.totalPages > 0 && page > data.pagination.totalPages) {
+        setPage(data.pagination.totalPages);
+      }
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);
@@ -51,7 +71,7 @@ export function BranchListContent() {
     } finally {
       setIsLoading(false);
     }
-  }, [appliedFilters]);
+  }, [appliedFilters, page]);
 
   useEffect(() => {
     if (!isReady) return;
@@ -60,6 +80,7 @@ export function BranchListContent() {
 
   function handleSearch(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setPage(DEFAULT_BRANCH_PAGE);
     setAppliedFilters({
       branchCode: branchCodeSearch.trim(),
       branchName: branchNameSearch.trim(),
@@ -69,7 +90,12 @@ export function BranchListContent() {
   function handleClearSearch() {
     setBranchCodeSearch("");
     setBranchNameSearch("");
+    setPage(DEFAULT_BRANCH_PAGE);
     setAppliedFilters({ branchCode: "", branchName: "" });
+  }
+
+  function handlePageChange(nextPage: number) {
+    setPage(nextPage);
   }
 
   function openStatusDialog(branch: Branch) {
@@ -156,7 +182,7 @@ export function BranchListContent() {
         <Card>
           <CardHeader
             title="Branch List"
-            description={`${branches.length} branch${branches.length === 1 ? "" : "es"} found`}
+            description={`${pagination.total} branch${pagination.total === 1 ? "" : "es"} found`}
           />
           <CardContent>
             {error ? (
@@ -180,58 +206,69 @@ export function BranchListContent() {
                 </p>
               </div>
             ) : (
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableHeaderCell>Branch Code</TableHeaderCell>
-                    <TableHeaderCell>Branch Name</TableHeaderCell>
-                    <TableHeaderCell>Address</TableHeaderCell>
-                    <TableHeaderCell>Status</TableHeaderCell>
-                    <TableHeaderCell>Created Date</TableHeaderCell>
-                    <TableHeaderCell>Actions</TableHeaderCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {branches.map((branch) => (
-                    <TableRow key={branch.id}>
-                      <TableCell className="font-medium text-brand-blue">
-                        {branch.branchCode}
-                      </TableCell>
-                      <TableCell>{branch.branchName}</TableCell>
-                      <TableCell className="max-w-xs whitespace-normal">
-                        {branch.address || "—"}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={branch.isActive ? "success" : "neutral"}>
-                          {branch.isActive ? "Active" : "Inactive"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{formatBranchDate(branch.createdAt)}</TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-2">
-                          <Link href={`/admin/branches/${branch.id}/edit`}>
-                            <Button variant="outline" className="px-3 py-1.5 text-xs">
-                              Edit
-                            </Button>
-                          </Link>
-                          <Link href={`/admin/branches/${branch.id}`}>
-                            <Button variant="outline" className="px-3 py-1.5 text-xs">
-                              View
-                            </Button>
-                          </Link>
-                          <Button
-                            variant="outline"
-                            className="px-3 py-1.5 text-xs"
-                            onClick={() => openStatusDialog(branch)}
-                          >
-                            {branch.isActive ? "Disable" : "Enable"}
-                          </Button>
-                        </div>
-                      </TableCell>
+              <>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableHeaderCell>Branch Code</TableHeaderCell>
+                      <TableHeaderCell>Branch Name</TableHeaderCell>
+                      <TableHeaderCell>Address</TableHeaderCell>
+                      <TableHeaderCell>Status</TableHeaderCell>
+                      <TableHeaderCell>Created Date</TableHeaderCell>
+                      <TableHeaderCell>Actions</TableHeaderCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHead>
+                  <TableBody>
+                    {branches.map((branch) => (
+                      <TableRow key={branch.id}>
+                        <TableCell className="font-medium text-brand-blue">
+                          {branch.branchCode}
+                        </TableCell>
+                        <TableCell>{branch.branchName}</TableCell>
+                        <TableCell className="max-w-xs whitespace-normal">
+                          {branch.address || "—"}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={branch.isActive ? "success" : "neutral"}>
+                            {branch.isActive ? "Active" : "Inactive"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{formatBranchDate(branch.createdAt)}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-2">
+                            <Link href={`/admin/branches/${branch.id}/edit`}>
+                              <Button variant="outline" className="px-3 py-1.5 text-xs">
+                                Edit
+                              </Button>
+                            </Link>
+                            <Link href={`/admin/branches/${branch.id}`}>
+                              <Button variant="outline" className="px-3 py-1.5 text-xs">
+                                View
+                              </Button>
+                            </Link>
+                            <Button
+                              variant="outline"
+                              className="px-3 py-1.5 text-xs"
+                              onClick={() => openStatusDialog(branch)}
+                            >
+                              {branch.isActive ? "Disable" : "Enable"}
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+
+                <Pagination
+                  className="mt-4"
+                  page={pagination.page}
+                  totalPages={pagination.totalPages}
+                  total={pagination.total}
+                  pageSize={pagination.limit}
+                  onPageChange={handlePageChange}
+                />
+              </>
             )}
           </CardContent>
         </Card>

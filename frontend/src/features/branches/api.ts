@@ -4,6 +4,7 @@ import type {
   Branch,
   BranchFormValues,
   BranchListResponse,
+  BranchPagination,
   BranchResponse,
   BranchSearchFilters,
 } from "@/features/branches/types";
@@ -30,19 +31,30 @@ function buildSearchParams(filters: BranchSearchFilters): string {
     params.set("branchName", filters.branchName.trim());
   }
 
+  if (filters.page !== undefined) {
+    params.set("page", String(filters.page));
+  }
+
+  if (filters.limit !== undefined) {
+    params.set("limit", String(filters.limit));
+  }
+
   const query = params.toString();
   return query ? `?${query}` : "";
 }
 
 export async function fetchBranches(
   filters: BranchSearchFilters = {}
-): Promise<Branch[]> {
+): Promise<{ branches: Branch[]; pagination: BranchPagination }> {
   const response = await apiClient<BranchListResponse>(
     `/api/admin/branches${buildSearchParams(filters)}`,
     { token: getToken() }
   );
 
-  return response.branches;
+  return {
+    branches: response.branches,
+    pagination: response.pagination,
+  };
 }
 
 export async function fetchBranchById(id: number): Promise<Branch> {
