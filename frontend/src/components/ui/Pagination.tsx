@@ -37,45 +37,71 @@ export function Pagination({
 
   return (
     <div
-      className={`flex flex-col gap-4 border-t border-brand-black-15 pt-4 sm:flex-row sm:items-center sm:justify-between ${className}`}
+      className={`flex flex-col gap-4 border-t border-brand-black-15 pt-4 ${className}`}
       {...props}
     >
-      <p className="text-sm text-brand-black-75">
-        Showing {start}-{end} of {total} branches
-      </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-brand-black-75">
+          Showing {start}-{end} of {total} branches
+        </p>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          className="px-3 py-1.5 text-xs"
-          disabled={page <= 1}
-          onClick={() => onPageChange(page - 1)}
-        >
-          Previous
-        </Button>
-
-        {visiblePages.map((pageNumber) => (
+        <div className="flex flex-wrap items-center gap-2">
           <Button
-            key={pageNumber}
             type="button"
-            variant={pageNumber === page ? "primary" : "outline"}
-            className="min-w-9 px-3 py-1.5 text-xs"
-            onClick={() => onPageChange(pageNumber)}
+            variant="outline"
+            className="px-3 py-1.5 text-xs"
+            disabled={page <= 1}
+            onClick={() => onPageChange(page - 1)}
           >
-            {pageNumber}
+            Previous
           </Button>
-        ))}
 
-        <Button
-          type="button"
-          variant="outline"
-          className="px-3 py-1.5 text-xs"
-          disabled={page >= totalPages}
-          onClick={() => onPageChange(page + 1)}
+          {visiblePages.map((pageNumber) => (
+            <Button
+              key={pageNumber}
+              type="button"
+              variant={pageNumber === page ? "primary" : "outline"}
+              className="min-w-9 px-3 py-1.5 text-xs"
+              onClick={() => onPageChange(pageNumber)}
+            >
+              {pageNumber}
+            </Button>
+          ))}
+
+          <Button
+            type="button"
+            variant="outline"
+            className="px-3 py-1.5 text-xs"
+            disabled={page >= totalPages}
+            onClick={() => onPageChange(page + 1)}
+          >
+            Next
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-center gap-2 sm:justify-end">
+        <label
+          htmlFor="pagination-page-select"
+          className="text-sm font-medium text-brand-black-75"
         >
-          Next
-        </Button>
+          Go to page
+        </label>
+        <select
+          id="pagination-page-select"
+          value={String(page)}
+          onChange={(event) => onPageChange(Number(event.target.value))}
+          className="rounded-lg border border-brand-black-15 bg-white px-3 py-2 text-sm text-brand-black shadow-sm transition-colors focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+          aria-label="Select page number"
+        >
+          {Array.from({ length: totalPages }, (_, index) => index + 1).map(
+            (pageNumber) => (
+              <option key={pageNumber} value={pageNumber}>
+                Page {pageNumber} of {totalPages}
+              </option>
+            )
+          )}
+        </select>
       </div>
     </div>
   );

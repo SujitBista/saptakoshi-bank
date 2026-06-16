@@ -30,15 +30,15 @@ const INITIAL_PAGINATION: BranchPagination = {
   totalPages: 0,
 };
 
+const SEARCH_DEBOUNCE_MS = 300;
+
 export function BranchListContent() {
   const { user, isReady, handleLogout } = useAdminAuth();
   const [branches, setBranches] = useState<Branch[]>([]);
   const [branchCodeSearch, setBranchCodeSearch] = useState("");
   const [branchNameSearch, setBranchNameSearch] = useState("");
-  const [appliedFilters, setAppliedFilters] = useState({
-    branchCode: "",
-    branchName: "",
-  });
+  const [debouncedBranchCode, setDebouncedBranchCode] = useState("");
+  const [debouncedBranchName, setDebouncedBranchName] = useState("");
   const [page, setPage] = useState(DEFAULT_BRANCH_PAGE);
   const [pagination, setPagination] = useState<BranchPagination>(INITIAL_PAGINATION);
   const [isLoading, setIsLoading] = useState(true);
@@ -52,7 +52,8 @@ export function BranchListContent() {
 
     try {
       const data = await fetchBranches({
-        ...appliedFilters,
+        branchCode: debouncedBranchCode,
+        branchName: debouncedBranchName,
         page,
         limit: DEFAULT_BRANCH_PAGE_SIZE,
       });
@@ -71,27 +72,40 @@ export function BranchListContent() {
     } finally {
       setIsLoading(false);
     }
-  }, [appliedFilters, page]);
+  }, [debouncedBranchCode, debouncedBranchName, page]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const nextCode = branchCodeSearch.trim();
+      const nextName = branchNameSearch.trim();
+
+      if (nextCode !== debouncedBranchCode || nextName !== debouncedBranchName) {
+        setPage(DEFAULT_BRANCH_PAGE);
+      }
+
+      setDebouncedBranchCode(nextCode);
+      setDebouncedBranchName(nextName);
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => clearTimeout(timer);
+  }, [
+    branchCodeSearch,
+    branchNameSearch,
+    debouncedBranchCode,
+    debouncedBranchName,
+  ]);
 
   useEffect(() => {
     if (!isReady) return;
     void loadBranches();
   }, [isReady, loadBranches]);
 
-  function handleSearch(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setPage(DEFAULT_BRANCH_PAGE);
-    setAppliedFilters({
-      branchCode: branchCodeSearch.trim(),
-      branchName: branchNameSearch.trim(),
-    });
-  }
-
   function handleClearSearch() {
     setBranchCodeSearch("");
     setBranchNameSearch("");
+    setDebouncedBranchCode("");
+    setDebouncedBranchName("");
     setPage(DEFAULT_BRANCH_PAGE);
-    setAppliedFilters({ branchCode: "", branchName: "" });
   }
 
   function handlePageChange(nextPage: number) {
@@ -141,13 +155,10 @@ export function BranchListContent() {
         <Card className="mb-6">
           <CardHeader
             title="Search Branches"
-            description="Filter by branch code or branch name"
+            description="Filter by branch code or branch name as you type"
           />
           <CardContent>
-            <form
-              className="grid gap-4 md:grid-cols-[1fr_1fr_auto_auto]"
-              onSubmit={handleSearch}
-            >
+            <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto]">
               <Input
                 label="Branch Code"
                 placeholder="Search by code"
@@ -161,11 +172,6 @@ export function BranchListContent() {
                 onChange={(event) => setBranchNameSearch(event.target.value)}
               />
               <div className="flex items-end">
-                <Button type="submit" className="w-full md:w-auto">
-                  Search
-                </Button>
-              </div>
-              <div className="flex items-end">
                 <Button
                   type="button"
                   variant="outline"
@@ -175,7 +181,7 @@ export function BranchListContent() {
                   Clear
                 </Button>
               </div>
-            </form>
+            </div>
           </CardContent>
         </Card>
 
