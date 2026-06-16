@@ -11,8 +11,20 @@ type AdminNavItem = {
   label: string;
 };
 
-const ADMIN_NAV_ITEMS: AdminNavItem[] = [
-  { href: "/admin/dashboard", label: "Dashboard" },
+type AdminNavSection = {
+  label: string;
+  items: AdminNavItem[];
+};
+
+const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
+  {
+    label: "Navigation",
+    items: [{ href: "/admin/dashboard", label: "Dashboard" }],
+  },
+  {
+    label: "Admin",
+    items: [{ href: "/admin/branches", label: "Branches" }],
+  },
 ];
 
 type AdminLayoutProps = {
@@ -71,29 +83,35 @@ export function AdminLayout({
       <div className="flex flex-1">
         <aside className="hidden w-64 shrink-0 border-r border-brand-black-15 bg-white lg:flex lg:flex-col">
           <nav className="flex-1 px-3 py-5">
-            <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-brand-black-50">
-              Navigation
-            </p>
-            <ul className="space-y-1">
-              {ADMIN_NAV_ITEMS.map((item) => {
-                const isActive = pathname === item.href;
+            {ADMIN_NAV_SECTIONS.map((section) => (
+              <div key={section.label} className="mb-6 last:mb-0">
+                <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-brand-black-50">
+                  {section.label}
+                </p>
+                <ul className="space-y-1">
+                  {section.items.map((item) => {
+                    const isActive =
+                      pathname === item.href ||
+                      pathname.startsWith(`${item.href}/`);
 
-                return (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      className={`block rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                        isActive
-                          ? "bg-brand-blue-05 text-brand-blue"
-                          : "text-brand-black-75 hover:bg-brand-black-05 hover:text-brand-blue"
-                      }`}
-                    >
-                      {item.label}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
+                    return (
+                      <li key={item.href}>
+                        <Link
+                          href={item.href}
+                          className={`block rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                            isActive
+                              ? "bg-brand-blue-05 text-brand-blue"
+                              : "text-brand-black-75 hover:bg-brand-black-05 hover:text-brand-blue"
+                          }`}
+                        >
+                          {item.label}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
           </nav>
 
           <div className="border-t border-brand-black-15 px-4 py-4 text-xs text-brand-black-50">
