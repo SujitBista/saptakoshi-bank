@@ -1,0 +1,2 @@
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS branch_id INTEGER REFERENCES branches(id);

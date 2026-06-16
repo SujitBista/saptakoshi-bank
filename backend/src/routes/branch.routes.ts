@@ -6,8 +6,11 @@ import {
   postBranch,
   putBranch,
 } from "../controllers/branch.controller";
+import { requireAdmin, requireAuth } from "../middleware/auth.middleware";
 
 const router = Router();
+
+router.use(requireAuth, requireAdmin);
 
 router.get("/", getBranches);
 router.post("/", postBranch);

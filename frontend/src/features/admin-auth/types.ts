@@ -1,8 +1,12 @@
 export interface AdminUser {
   id: number;
-  name: string;
+  fullName: string;
+  username: string;
   email: string;
   role: string;
+  branchId: number | null;
+  branchCode: string | null;
+  branchName: string | null;
 }
 
 export interface AdminLoginResponse {

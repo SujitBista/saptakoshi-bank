@@ -1,11 +1,15 @@
-INSERT INTO users (name, email, password_hash, role)
+INSERT INTO users (full_name, username, email, password_hash, role, is_active)
 VALUES (
   'Admin',
+  'admin',
   'admin@saptakoshi.com',
   '$2b$10$dZSMCVLXA9PzPzDdvxlWqemD/plbMXLrTicKz28Ut.BWsH5AwUyxC',
-  'admin'
+  'ADMIN',
+  true
 )
 ON CONFLICT (email) DO UPDATE SET
-  name = EXCLUDED.name,
+  full_name = EXCLUDED.full_name,
+  username = EXCLUDED.username,
   password_hash = EXCLUDED.password_hash,
-  role = EXCLUDED.role;
+  role = EXCLUDED.role,
+  is_active = EXCLUDED.is_active;

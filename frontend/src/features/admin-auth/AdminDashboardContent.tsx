@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { USER_ROLES } from "@saptakoshi/shared";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { getUser, isAuthenticated, removeToken } from "@/lib/auth";
@@ -16,6 +17,13 @@ export function AdminDashboardContent() {
 
   useEffect(() => {
     if (!isAuthenticated()) {
+      router.replace("/admin/login");
+      return;
+    }
+
+    const storedUser = getUser();
+    if (!storedUser || storedUser.role !== USER_ROLES.ADMIN) {
+      removeToken();
       router.replace("/admin/login");
     }
   }, [router]);
@@ -66,10 +74,20 @@ export function AdminDashboardContent() {
                 <p className="text-xs font-semibold uppercase tracking-wider text-brand-green">
                   Role
                 </p>
-                <p className="mt-2 text-sm font-medium capitalize text-brand-black">
+                <p className="mt-2 text-sm font-medium text-brand-black">
                   {user.role}
                 </p>
               </div>
+              {user.fullName ? (
+                <div className="rounded-xl border border-brand-blue-15 bg-brand-blue-05 px-5 py-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-brand-blue">
+                    Full Name
+                  </p>
+                  <p className="mt-2 text-sm font-medium text-brand-black">
+                    {user.fullName}
+                  </p>
+                </div>
+              ) : null}
             </div>
 
             <div className="flex items-start gap-3 rounded-xl border border-brand-green-15 bg-brand-green-05 px-5 py-4">

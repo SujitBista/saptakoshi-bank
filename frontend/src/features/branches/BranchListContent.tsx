@@ -272,6 +272,7 @@ export function BranchListContent() {
                   totalPages={pagination.totalPages}
                   total={pagination.total}
                   pageSize={pagination.limit}
+                  itemLabel="branches"
                   onPageChange={handlePageChange}
                 />
               </>

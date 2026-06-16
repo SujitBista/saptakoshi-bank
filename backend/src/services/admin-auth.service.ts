@@ -9,24 +9,32 @@ export class AuthError extends Error {
   }
 }
 
-export interface AdminLoginResult {
+export interface LoginResult {
   token: string;
   user: {
     id: number;
-    name: string;
+    fullName: string;
+    username: string;
     email: string;
     role: string;
+    branchId: number | null;
+    branchCode: string | null;
+    branchName: string | null;
   };
 }
 
 export async function login(
   email: string,
   password: string
-): Promise<AdminLoginResult> {
+): Promise<LoginResult> {
   const user = await userRepository.findByEmail(email);
 
-  if (!user || user.role !== "admin") {
+  if (!user) {
     throw new AuthError("Invalid credentials");
+  }
+
+  if (!user.is_active) {
+    throw new AuthError("Account is inactive");
   }
 
   const passwordMatches = await comparePassword(password, user.password_hash);
@@ -44,9 +52,13 @@ export async function login(
     token,
     user: {
       id: user.id,
-      name: user.name,
+      fullName: user.full_name,
+      username: user.username,
       email: user.email,
       role: user.role,
+      branchId: user.branch_id,
+      branchCode: user.branch_code,
+      branchName: user.branch_name,
     },
   };
 }
