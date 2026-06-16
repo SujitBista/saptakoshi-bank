@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { APP_NAME } from "@saptakoshi/shared";
 import adminAuthRoutes from "./admin-auth.routes";
+import branchRoutes from "./branch.routes";
 import dbTestRoutes from "./db-test.routes";
 import healthRoutes from "./health.routes";
 
@@ -11,6 +12,7 @@ router.get("/", (_req, res) => {
 });
 
 router.use("/admin/auth", adminAuthRoutes);
+router.use("/admin/branches", branchRoutes);
 router.use("/health", healthRoutes);
 router.use("/db-test", dbTestRoutes);
 
