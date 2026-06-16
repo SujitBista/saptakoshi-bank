@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { USER_ROLES } from "@saptakoshi/shared";
 import { getUser, isAuthenticated, removeToken } from "@/lib/auth";
 import type { AdminUser } from "@/features/admin-auth/types";
 
@@ -16,7 +17,15 @@ export function useAdminAuth() {
       return;
     }
 
-    setUser(getUser());
+    const storedUser = getUser();
+
+    if (!storedUser || storedUser.role !== USER_ROLES.ADMIN) {
+      removeToken();
+      router.replace("/admin/login");
+      return;
+    }
+
+    setUser(storedUser);
     setIsReady(true);
   }, [router]);
 

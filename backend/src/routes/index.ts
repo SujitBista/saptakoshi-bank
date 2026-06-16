@@ -4,6 +4,7 @@ import adminAuthRoutes from "./admin-auth.routes";
 import branchRoutes from "./branch.routes";
 import dbTestRoutes from "./db-test.routes";
 import healthRoutes from "./health.routes";
+import userRoutes from "./user.routes";
 
 const router = Router();
 
@@ -13,6 +14,7 @@ router.get("/", (_req, res) => {
 
 router.use("/admin/auth", adminAuthRoutes);
 router.use("/admin/branches", branchRoutes);
+router.use("/admin/users", userRoutes);
 router.use("/health", healthRoutes);
 router.use("/db-test", dbTestRoutes);
 

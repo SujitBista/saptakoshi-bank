@@ -6,6 +6,7 @@ export interface PaginationProps extends HTMLAttributes<HTMLDivElement> {
   totalPages: number;
   total: number;
   pageSize: number;
+  itemLabel?: string;
   onPageChange: (page: number) => void;
 }
 
@@ -23,6 +24,7 @@ export function Pagination({
   totalPages,
   total,
   pageSize,
+  itemLabel = "items",
   onPageChange,
   className = "",
   ...props
@@ -42,7 +44,7 @@ export function Pagination({
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-brand-black-75">
-          Showing {start}-{end} of {total} branches
+          Showing {start}-{end} of {total} {itemLabel}
         </p>
 
         <div className="flex flex-wrap items-center gap-2">
