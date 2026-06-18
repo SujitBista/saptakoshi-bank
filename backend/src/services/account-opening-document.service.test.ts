@@ -104,6 +104,9 @@ describe("account-opening-document.service", () => {
         query: vi.fn(),
       })
     );
+    vi.mocked(
+      accountOpeningDocumentRepository.findUniqueFieldConflicts
+    ).mockResolvedValue([]);
   });
 
   it("uploads a document using the logged-in user's branch", async () => {
@@ -326,6 +329,57 @@ describe("account-opening-document.service", () => {
       })
     ).rejects.toThrow(
       new AccountOpeningDocumentError("File size must be 2 MB or less")
+    );
+  });
+
+  it("rejects duplicate client code on upload", async () => {
+    vi.mocked(userRepository.findById).mockResolvedValue(currentUser);
+    vi.mocked(branchRepository.findById).mockResolvedValue(branch);
+    vi.mocked(
+      accountOpeningDocumentRepository.findUniqueFieldConflicts
+    ).mockResolvedValue(["client_code"]);
+
+    await expect(
+      uploadAccountOpeningDocument({
+        authenticatedUser: authUser,
+        clientCode: "CL000123",
+        firstName: "Sita",
+        lastName: "Sharma",
+        citizenNo: "12345678",
+        mobileNumber: "9800000000",
+        file: {
+          originalname: "citizenship.pdf",
+          mimetype: "application/pdf",
+          size: 2048,
+          buffer: Buffer.from("pdf"),
+        } as Express.Multer.File,
+      })
+    ).rejects.toThrow(
+      new AccountOpeningDocumentError("Client code is already in use", 409)
+    );
+  });
+
+  it("rejects duplicate citizen number on update", async () => {
+    vi.mocked(userRepository.findById).mockResolvedValue(currentUser);
+    vi.mocked(accountOpeningDocumentRepository.findById).mockResolvedValue(
+      documentRow
+    );
+    vi.mocked(
+      accountOpeningDocumentRepository.findUniqueFieldConflicts
+    ).mockResolvedValue(["citizen_no"]);
+
+    await expect(
+      updateAccountOpeningDocument({
+        authenticatedUser: authUser,
+        documentId: 11,
+        firstName: "Sita",
+        lastName: "Sharma",
+        fatherName: "Hari Sharma",
+        citizenNo: "99999999",
+        mobileNumber: "9800000000",
+      })
+    ).rejects.toThrow(
+      new AccountOpeningDocumentError("Citizen No. is already in use", 409)
     );
   });
 });
