@@ -21,15 +21,17 @@ export async function apiClient<T>(
   options: RequestOptions = {}
 ): Promise<T> {
   const { body, token, headers, ...rest } = options;
+  const isFormData = body instanceof FormData;
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...rest,
     headers: {
-      "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...headers,
     },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+    body:
+      body === undefined ? undefined : isFormData ? body : JSON.stringify(body),
   });
 
   const data = (await response.json().catch(() => null)) as

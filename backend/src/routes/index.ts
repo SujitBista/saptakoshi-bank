@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { APP_NAME } from "@saptakoshi/shared";
+import accountOpeningDocumentRoutes from "./account-opening-document.routes";
 import adminAuthRoutes from "./admin-auth.routes";
 import branchRoutes from "./branch.routes";
 import dbTestRoutes from "./db-test.routes";
@@ -12,6 +13,7 @@ router.get("/", (_req, res) => {
   res.json({ message: `${APP_NAME} API` });
 });
 
+router.use("/account-opening-documents", accountOpeningDocumentRoutes);
 router.use("/admin/auth", adminAuthRoutes);
 router.use("/admin/branches", branchRoutes);
 router.use("/admin/users", userRoutes);
