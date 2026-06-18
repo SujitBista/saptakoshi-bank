@@ -191,6 +191,38 @@ function ensurePathInsideRoot(rootDir: string, targetPath: string): void {
   }
 }
 
+function getUniqueFieldErrorMessage(
+  field: accountOpeningDocumentRepository.AccountOpeningDocumentUniqueField
+): string {
+  switch (field) {
+    case "client_code":
+      return "Client code is already in use";
+    case "citizen_no":
+      return "Citizen No. is already in use";
+    case "mobile_number":
+      return "Mobile number is already in use";
+  }
+}
+
+async function assertUniqueDocumentFields(
+  values: accountOpeningDocumentRepository.AccountOpeningDocumentUniqueFieldCheck,
+  excludeDocumentId?: number,
+  executor?: import("../config/database").DbExecutor
+): Promise<void> {
+  const conflicts = await accountOpeningDocumentRepository.findUniqueFieldConflicts(
+    values,
+    excludeDocumentId,
+    executor
+  );
+
+  if (conflicts.length > 0) {
+    throw new AccountOpeningDocumentError(
+      getUniqueFieldErrorMessage(conflicts[0]),
+      409
+    );
+  }
+}
+
 function toDocumentDto(
   row:
     | accountOpeningDocumentRepository.AccountOpeningDocumentRow
@@ -371,6 +403,16 @@ export async function uploadAccountOpeningDocument(
     ensurePathInsideRoot(uploadDir, absoluteDirectory);
     ensurePathInsideRoot(uploadDir, absoluteFilePath);
 
+    await assertUniqueDocumentFields(
+      {
+        clientCode,
+        citizenNo,
+        mobileNumber,
+      },
+      undefined,
+      executor
+    );
+
     await fs.mkdir(absoluteDirectory, { recursive: true });
 
     try {
@@ -534,6 +576,14 @@ export async function updateAccountOpeningDocument(
       fileSize: payload.file.size,
     };
   }
+
+  await assertUniqueDocumentFields(
+    {
+      citizenNo,
+      mobileNumber,
+    },
+    payload.documentId
+  );
 
   const updated = await accountOpeningDocumentRepository.update(
     payload.documentId,

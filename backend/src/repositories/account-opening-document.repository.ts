@@ -67,6 +67,17 @@ export interface CreateAccountOpeningDocumentInput {
   fileSize: number;
 }
 
+export type AccountOpeningDocumentUniqueField =
+  | "client_code"
+  | "citizen_no"
+  | "mobile_number";
+
+export interface AccountOpeningDocumentUniqueFieldCheck {
+  clientCode?: string;
+  citizenNo?: string;
+  mobileNumber?: string;
+}
+
 const defaultExecutor: DbExecutor = { query };
 
 const DETAIL_SELECT_COLUMNS = `
@@ -189,6 +200,61 @@ export async function findById(
   );
 
   return rows[0] ?? null;
+}
+
+export async function findUniqueFieldConflicts(
+  values: AccountOpeningDocumentUniqueFieldCheck,
+  excludeDocumentId?: number,
+  executor: DbExecutor = defaultExecutor
+): Promise<AccountOpeningDocumentUniqueField[]> {
+  const conflicts: AccountOpeningDocumentUniqueField[] = [];
+
+  if (values.clientCode) {
+    const rows = await executor.query<{ id: number }>(
+      `SELECT id
+       FROM account_opening_documents
+       WHERE client_code = $1
+         AND ($2::bigint IS NULL OR id <> $2)
+       LIMIT 1`,
+      [values.clientCode, excludeDocumentId ?? null]
+    );
+
+    if (rows[0]) {
+      conflicts.push("client_code");
+    }
+  }
+
+  if (values.citizenNo) {
+    const rows = await executor.query<{ id: number }>(
+      `SELECT id
+       FROM account_opening_documents
+       WHERE citizen_no = $1
+         AND ($2::bigint IS NULL OR id <> $2)
+       LIMIT 1`,
+      [values.citizenNo, excludeDocumentId ?? null]
+    );
+
+    if (rows[0]) {
+      conflicts.push("citizen_no");
+    }
+  }
+
+  if (values.mobileNumber) {
+    const rows = await executor.query<{ id: number }>(
+      `SELECT id
+       FROM account_opening_documents
+       WHERE mobile_number = $1
+         AND ($2::bigint IS NULL OR id <> $2)
+       LIMIT 1`,
+      [values.mobileNumber, excludeDocumentId ?? null]
+    );
+
+    if (rows[0]) {
+      conflicts.push("mobile_number");
+    }
+  }
+
+  return conflicts;
 }
 
 export async function update(
