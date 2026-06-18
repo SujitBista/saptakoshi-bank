@@ -188,9 +188,10 @@ export async function findAll(
 }
 
 export async function findById(
-  id: number
+  id: number,
+  executor: DbExecutor = defaultExecutor
 ): Promise<AccountOpeningDocumentDetailRow | null> {
-  const rows = await query<AccountOpeningDocumentDetailRow>(
+  const rows = await executor.query<AccountOpeningDocumentDetailRow>(
     `SELECT ${DETAIL_SELECT_COLUMNS}
      FROM account_opening_documents d
      JOIN branches b ON b.id = d.branch_id
@@ -292,7 +293,7 @@ export async function update(
     return null;
   }
 
-  return findById(id);
+  return findById(id, executor);
 }
 
 export async function getNextDocumentSequence(
