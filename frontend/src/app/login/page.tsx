@@ -1,7 +1,7 @@
 import { AdminBrand } from "@/components/layout/AdminBrand";
 import { LoginForm } from "@/features/auth/LoginForm";
 
-export default function AdminLoginPage() {
+export default function LoginPage() {
   return (
     <div className="min-h-screen bg-brand-blue-05">
       <div className="border-b-4 border-brand-green bg-brand-blue">
@@ -33,15 +33,12 @@ export default function AdminLoginPage() {
                 size="lg"
                 showTagline
                 tagline="Trusted Banking Partner"
-                showAdminLabel
-                adminLabel="Admin Portal"
               />
             </div>
 
             <div className="space-y-4 border-t border-white/20 pt-8">
               <p className="text-lg font-medium leading-relaxed text-brand-blue-25">
-                Authorized personnel access for internal banking operations and
-                administration.
+                Authorized personnel access for internal banking operations.
               </p>
               <p className="text-sm text-brand-blue-50">
                 Our Community, Our Bank
@@ -56,8 +53,6 @@ export default function AdminLoginPage() {
               size="md"
               showTagline
               tagline="Trusted Banking Partner"
-              showAdminLabel
-              adminLabel="Admin Portal"
             />
           </div>
 
@@ -69,7 +64,7 @@ export default function AdminLoginPage() {
               </p>
             </div>
 
-            <LoginForm redirectPath="/admin/dashboard" />
+            <LoginForm />
 
             <p className="mt-8 text-center text-xs leading-relaxed text-brand-black-50">
               This portal is restricted to authorized Saptakoshi Development

@@ -46,6 +46,7 @@ export async function login(
     sub: user.id,
     email: user.email,
     role: user.role,
+    branchId: user.branch_id,
   });
 
   return {

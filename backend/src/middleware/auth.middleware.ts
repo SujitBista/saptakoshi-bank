@@ -1,10 +1,17 @@
 import type { NextFunction, Request, Response } from "express";
 import { USER_ROLES } from "@saptakoshi/shared";
-import { verifyToken, type JwtPayload } from "../auth/jwt";
+import { verifyToken } from "../auth/jwt";
+
+export interface AuthenticatedUser {
+  id: number;
+  email: string;
+  role: string;
+  branch_id: number | null;
+}
 
 declare module "express-serve-static-core" {
   interface Request {
-    authUser?: JwtPayload;
+    user?: AuthenticatedUser;
   }
 }
 
@@ -21,7 +28,13 @@ export function requireAuth(
   }
 
   try {
-    req.authUser = verifyToken(header.slice(7));
+    const payload = verifyToken(header.slice(7));
+    req.user = {
+      id: payload.sub,
+      email: payload.email,
+      role: payload.role,
+      branch_id: payload.branchId,
+    };
     next();
   } catch {
     res.status(401).json({ error: "Unauthorized" });
@@ -33,7 +46,7 @@ export function requireAdmin(
   res: Response,
   next: NextFunction
 ): void {
-  if (req.authUser?.role !== USER_ROLES.ADMIN) {
+  if (req.user?.role !== USER_ROLES.ADMIN) {
     res.status(403).json({ error: "Forbidden" });
     return;
   }

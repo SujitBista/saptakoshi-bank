@@ -1,11 +1,11 @@
 "use client";
 
-import { AdminLayout } from "@/components/layout/AdminLayout";
+import { UserLayout } from "@/components/layout/UserLayout";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
-import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { useUserAuth } from "@/hooks/useUserAuth";
 
-export function AdminDashboardContent() {
-  const { user, isReady, handleLogout } = useAdminAuth();
+export function UserDashboardContent() {
+  const { user, isReady, handleLogout } = useUserAuth();
 
   if (!isReady || !user) {
     return (
@@ -16,7 +16,7 @@ export function AdminDashboardContent() {
   }
 
   return (
-    <AdminLayout
+    <UserLayout
       userEmail={user.email}
       userRole={user.role}
       onLogout={handleLogout}
@@ -25,17 +25,25 @@ export function AdminDashboardContent() {
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-brand-blue">Dashboard</h1>
           <p className="mt-1 text-sm text-brand-black-75">
-            Staff administration portal for Saptakoshi Development Bank
+            Welcome to the Saptakoshi Development Bank staff portal
           </p>
         </div>
 
         <Card>
           <CardHeader
-            title="Welcome, Admin"
-            description="You are signed in to the staff administration portal."
+            title={`Welcome, ${user.fullName}`}
+            description="You are signed in to your branch staff account."
           />
           <CardContent className="space-y-6">
             <div className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-xl border border-brand-blue-15 bg-brand-blue-05 px-5 py-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-brand-blue">
+                  Full Name
+                </p>
+                <p className="mt-2 text-sm font-medium text-brand-black">
+                  {user.fullName}
+                </p>
+              </div>
               <div className="rounded-xl border border-brand-blue-15 bg-brand-blue-05 px-5 py-4">
                 <p className="text-xs font-semibold uppercase tracking-wider text-brand-blue">
                   Email
@@ -46,22 +54,20 @@ export function AdminDashboardContent() {
               </div>
               <div className="rounded-xl border border-brand-green-15 bg-brand-green-05 px-5 py-4">
                 <p className="text-xs font-semibold uppercase tracking-wider text-brand-green">
-                  Role
+                  Branch Code
                 </p>
                 <p className="mt-2 text-sm font-medium text-brand-black">
-                  {user.role}
+                  {user.branchCode ?? "—"}
                 </p>
               </div>
-              {user.fullName ? (
-                <div className="rounded-xl border border-brand-blue-15 bg-brand-blue-05 px-5 py-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-brand-blue">
-                    Full Name
-                  </p>
-                  <p className="mt-2 text-sm font-medium text-brand-black">
-                    {user.fullName}
-                  </p>
-                </div>
-              ) : null}
+              <div className="rounded-xl border border-brand-green-15 bg-brand-green-05 px-5 py-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-brand-green">
+                  Branch Name
+                </p>
+                <p className="mt-2 text-sm font-medium text-brand-black">
+                  {user.branchName ?? "—"}
+                </p>
+              </div>
             </div>
 
             <div className="flex items-start gap-3 rounded-xl border border-brand-green-15 bg-brand-green-05 px-5 py-4">
@@ -70,13 +76,12 @@ export function AdminDashboardContent() {
                 aria-hidden="true"
               />
               <p className="text-sm text-brand-black-75">
-                Session active. Use Logout when you are finished with your
-                administrative tasks.
+                Session active. Use Logout when you are finished with your work.
               </p>
             </div>
           </CardContent>
         </Card>
       </div>
-    </AdminLayout>
+    </UserLayout>
   );
 }

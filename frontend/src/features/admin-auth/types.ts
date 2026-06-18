@@ -1,15 +1,7 @@
-export interface AdminUser {
-  id: number;
-  fullName: string;
-  username: string;
-  email: string;
-  role: string;
-  branchId: number | null;
-  branchCode: string | null;
-  branchName: string | null;
-}
+export type { AuthUser, LoginResponse } from "@saptakoshi/shared";
 
-export interface AdminLoginResponse {
-  token: string;
-  user: AdminUser;
-}
+/** @deprecated Use AuthUser from @saptakoshi/shared */
+export type AdminUser = import("@saptakoshi/shared").AuthUser;
+
+/** @deprecated Use LoginResponse from @saptakoshi/shared */
+export type AdminLoginResponse = import("@saptakoshi/shared").LoginResponse;
