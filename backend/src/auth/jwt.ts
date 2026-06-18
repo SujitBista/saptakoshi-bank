@@ -4,6 +4,7 @@ export interface JwtPayload {
   sub: number;
   email: string;
   role: string;
+  branchId: number | null;
 }
 
 function getJwtSecret(): string {
@@ -25,9 +26,15 @@ export function verifyToken(token: string): JwtPayload {
     throw new Error("Invalid token payload");
   }
 
+  const branchId =
+    payload.branchId === null || payload.branchId === undefined
+      ? null
+      : Number(payload.branchId);
+
   return {
     sub: Number(payload.sub),
     email: String(payload.email),
     role: String(payload.role),
+    branchId: Number.isNaN(branchId) ? null : branchId,
   };
 }

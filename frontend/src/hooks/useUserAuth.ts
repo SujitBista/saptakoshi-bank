@@ -3,10 +3,10 @@
 import { USER_ROLES } from "@saptakoshi/shared";
 import { useAuth } from "@/hooks/useAuth";
 
-export function useAdminAuth() {
+export function useUserAuth() {
   return useAuth({
-    requiredRole: USER_ROLES.ADMIN,
-    loginPath: "/admin/login",
-    forbiddenPath: "/dashboard",
+    requiredRole: USER_ROLES.USER,
+    loginPath: "/login",
+    forbiddenPath: "/admin/dashboard",
   });
 }
