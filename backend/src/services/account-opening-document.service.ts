@@ -438,7 +438,10 @@ export async function uploadAccountOpeningDocument(
         executor
       );
 
-      const created = await accountOpeningDocumentRepository.findById(row.id);
+      const created = await accountOpeningDocumentRepository.findById(
+        row.id,
+        executor
+      );
       if (!created) {
         throw new AccountOpeningDocumentError("Failed to load created document", 500);
       }
