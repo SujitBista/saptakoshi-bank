@@ -24,7 +24,10 @@ export class AccountOpeningDocumentError extends Error {
 export interface AccountOpeningDocumentDto {
   id: number;
   branchId: number;
+  branchCode: string;
+  branchName: string;
   uploadedBy: number;
+  uploadedByName: string;
   clientCode: string;
   firstName: string;
   lastName: string;
@@ -41,6 +44,18 @@ export interface AccountOpeningDocumentDto {
   updatedAt: string;
 }
 
+export interface AccountOpeningDocumentListResponse {
+  data: AccountOpeningDocumentDto[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export const DEFAULT_ACCOUNT_OPENING_PAGE = 1;
+export const DEFAULT_ACCOUNT_OPENING_PAGE_SIZE = 10;
+export const MAX_ACCOUNT_OPENING_PAGE_SIZE = 100;
+
 export interface UploadAccountOpeningDocumentPayload {
   authenticatedUser: AuthenticatedUser;
   branchId?: string;
@@ -51,6 +66,33 @@ export interface UploadAccountOpeningDocumentPayload {
   citizenNo?: string;
   mobileNumber?: string;
   file?: Express.Multer.File;
+}
+
+export interface ListAccountOpeningDocumentsPayload {
+  authenticatedUser: AuthenticatedUser;
+  search?: string;
+  clientCode?: string;
+  documentNo?: string;
+  branchId?: number;
+  page?: number;
+  limit?: number;
+}
+
+export interface UpdateAccountOpeningDocumentPayload {
+  authenticatedUser: AuthenticatedUser;
+  documentId: number;
+  firstName?: string;
+  lastName?: string;
+  fatherName?: string;
+  citizenNo?: string;
+  mobileNumber?: string;
+  file?: Express.Multer.File;
+}
+
+export interface AccountOpeningDocumentFileResult {
+  absoluteFilePath: string;
+  originalFileName: string;
+  mimeType: string;
 }
 
 function getUploadDir(): string {
@@ -150,12 +192,19 @@ function ensurePathInsideRoot(rootDir: string, targetPath: string): void {
 }
 
 function toDocumentDto(
-  row: accountOpeningDocumentRepository.AccountOpeningDocumentRow
+  row:
+    | accountOpeningDocumentRepository.AccountOpeningDocumentRow
+    | accountOpeningDocumentRepository.AccountOpeningDocumentDetailRow
 ): AccountOpeningDocumentDto {
+  const detail = row as accountOpeningDocumentRepository.AccountOpeningDocumentDetailRow;
+
   return {
-    id: row.id,
+    id: Number(row.id),
     branchId: row.branch_id,
+    branchCode: detail.branch_code ?? "",
+    branchName: detail.branch_name ?? "",
     uploadedBy: row.uploaded_by,
+    uploadedByName: detail.uploaded_by_name ?? "",
     clientCode: row.client_code,
     firstName: row.first_name,
     lastName: row.last_name,
@@ -174,6 +223,64 @@ function toDocumentDto(
     createdAt: row.created_at.toISOString(),
     updatedAt: row.updated_at.toISOString(),
   };
+}
+
+async function getActiveUser(
+  authenticatedUser: AuthenticatedUser
+): Promise<userRepository.UserWithBranchRow> {
+  const currentUser = await userRepository.findById(authenticatedUser.id);
+
+  if (!currentUser) {
+    throw new AccountOpeningDocumentError("Unauthorized", 401);
+  }
+
+  if (!currentUser.is_active) {
+    throw new AccountOpeningDocumentError("Account is inactive", 403);
+  }
+
+  return currentUser;
+}
+
+function resolveListBranchId(
+  currentUser: userRepository.UserWithBranchRow,
+  branchId?: number
+): number | undefined {
+  if (currentUser.role === USER_ROLES.USER) {
+    if (!currentUser.branch_id) {
+      throw new AccountOpeningDocumentError("Assigned branch is required");
+    }
+
+    return currentUser.branch_id;
+  }
+
+  return branchId;
+}
+
+async function getAccessibleDocument(
+  currentUser: userRepository.UserWithBranchRow,
+  documentId: number
+): Promise<accountOpeningDocumentRepository.AccountOpeningDocumentDetailRow> {
+  const document = await accountOpeningDocumentRepository.findById(documentId);
+
+  if (!document) {
+    throw new AccountOpeningDocumentError("Document not found", 404);
+  }
+
+  if (
+    currentUser.role === USER_ROLES.USER &&
+    document.branch_id !== currentUser.branch_id
+  ) {
+    throw new AccountOpeningDocumentError("Forbidden", 403);
+  }
+
+  return document;
+}
+
+function getAbsoluteFilePath(relativeFilePath: string): string {
+  const uploadDir = getUploadDir();
+  const absoluteFilePath = path.join(uploadDir, relativeFilePath);
+  ensurePathInsideRoot(uploadDir, absoluteFilePath);
+  return absoluteFilePath;
 }
 
 async function resolveBranchForUpload(
@@ -222,15 +329,7 @@ async function resolveBranchForUpload(
 export async function uploadAccountOpeningDocument(
   payload: UploadAccountOpeningDocumentPayload
 ): Promise<AccountOpeningDocumentDto> {
-  const currentUser = await userRepository.findById(payload.authenticatedUser.id);
-
-  if (!currentUser) {
-    throw new AccountOpeningDocumentError("Unauthorized", 401);
-  }
-
-  if (!currentUser.is_active) {
-    throw new AccountOpeningDocumentError("Account is inactive", 403);
-  }
+  const currentUser = await getActiveUser(payload.authenticatedUser);
 
   const file = payload.file;
   if (!file) {
@@ -297,7 +396,12 @@ export async function uploadAccountOpeningDocument(
         executor
       );
 
-      return toDocumentDto(row);
+      const created = await accountOpeningDocumentRepository.findById(row.id);
+      if (!created) {
+        throw new AccountOpeningDocumentError("Failed to load created document", 500);
+      }
+
+      return toDocumentDto(created);
     } catch (error) {
       await fs.unlink(absoluteFilePath).catch(() => undefined);
 
@@ -316,4 +420,138 @@ export async function uploadAccountOpeningDocument(
       throw error;
     }
   });
+}
+
+export async function listAccountOpeningDocuments(
+  payload: ListAccountOpeningDocumentsPayload
+): Promise<AccountOpeningDocumentListResponse> {
+  const currentUser = await getActiveUser(payload.authenticatedUser);
+  const page = payload.page ?? DEFAULT_ACCOUNT_OPENING_PAGE;
+  const limit = Math.min(
+    payload.limit ?? DEFAULT_ACCOUNT_OPENING_PAGE_SIZE,
+    MAX_ACCOUNT_OPENING_PAGE_SIZE
+  );
+  const branchId = resolveListBranchId(currentUser, payload.branchId);
+
+  const filters = {
+    search: payload.search,
+    clientCode: payload.clientCode,
+    documentNo: payload.documentNo,
+    branchId,
+  };
+
+  const [total, rows] = await Promise.all([
+    accountOpeningDocumentRepository.countAll(filters),
+    accountOpeningDocumentRepository.findAll(filters, { page, limit }),
+  ]);
+
+  const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
+
+  return {
+    data: rows.map(toDocumentDto),
+    page,
+    limit,
+    total,
+    totalPages,
+  };
+}
+
+export async function getAccountOpeningDocumentById(
+  authenticatedUser: AuthenticatedUser,
+  documentId: number
+): Promise<AccountOpeningDocumentDto> {
+  const currentUser = await getActiveUser(authenticatedUser);
+  const document = await getAccessibleDocument(currentUser, documentId);
+  return toDocumentDto(document);
+}
+
+export async function getAccountOpeningDocumentFile(
+  authenticatedUser: AuthenticatedUser,
+  documentId: number
+): Promise<AccountOpeningDocumentFileResult> {
+  const currentUser = await getActiveUser(authenticatedUser);
+  const document = await getAccessibleDocument(currentUser, documentId);
+  const absoluteFilePath = getAbsoluteFilePath(document.relative_file_path);
+
+  try {
+    await fs.access(absoluteFilePath);
+  } catch {
+    throw new AccountOpeningDocumentError("Document file not found", 404);
+  }
+
+  return {
+    absoluteFilePath,
+    originalFileName: document.original_file_name,
+    mimeType: document.mime_type || "application/pdf",
+  };
+}
+
+export async function updateAccountOpeningDocument(
+  payload: UpdateAccountOpeningDocumentPayload
+): Promise<AccountOpeningDocumentDto> {
+  const currentUser = await getActiveUser(payload.authenticatedUser);
+  const document = await getAccessibleDocument(currentUser, payload.documentId);
+
+  const firstName = sanitizeText(payload.firstName, "First name", 100) as string;
+  const lastName = sanitizeText(payload.lastName, "Last name", 100) as string;
+  const fatherName = sanitizeText(payload.fatherName, "Father name", 100, false);
+  const citizenNo = sanitizeText(payload.citizenNo, "Citizen No.", 50) as string;
+  const mobileNumber = sanitizeText(
+    payload.mobileNumber,
+    "Mobile number",
+    20
+  ) as string;
+
+  let fileUpdate:
+    | {
+        originalFileName: string;
+        mimeType: string | null;
+        fileSize: number;
+      }
+    | undefined;
+
+  if (payload.file) {
+    ensureAllowedFile(payload.file);
+    const absoluteFilePath = getAbsoluteFilePath(document.relative_file_path);
+
+    try {
+      await fs.writeFile(absoluteFilePath, payload.file.buffer);
+    } catch (error) {
+      const errno = (error as NodeJS.ErrnoException | undefined)?.code;
+      if (errno === "EACCES" || errno === "EPERM" || errno === "ENOENT") {
+        throw new AccountOpeningDocumentError(
+          "Unable to store uploaded file. Check server upload directory permissions.",
+          500
+        );
+      }
+
+      throw error;
+    }
+
+    fileUpdate = {
+      originalFileName: payload.file.originalname,
+      mimeType: payload.file.mimetype || null,
+      fileSize: payload.file.size,
+    };
+  }
+
+  const updated = await accountOpeningDocumentRepository.update(
+    payload.documentId,
+    {
+      firstName,
+      lastName,
+      fatherName,
+      citizenNo,
+      mobileNumber,
+      originalFileName: fileUpdate?.originalFileName,
+      mimeType: fileUpdate?.mimeType,
+      fileSize: fileUpdate?.fileSize,
+    }
+  );
+
+  if (!updated) {
+    throw new AccountOpeningDocumentError("Document not found", 404);
+  }
+
+  return toDocumentDto(updated);
 }

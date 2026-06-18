@@ -1,7 +1,5 @@
 "use client";
 
-"use client";
-
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -25,8 +23,12 @@ export function UserLayout({
   const navigationItems = [
     { href: "/dashboard", label: "Dashboard" },
     {
+      href: "/dashboard/account-opening-documents",
+      label: "Documents",
+    },
+    {
       href: "/dashboard/account-opening-upload",
-      label: "Account Opening Upload",
+      label: "Upload",
     },
   ];
 
@@ -68,7 +70,8 @@ export function UserLayout({
         <div className="border-t border-white/10 px-4 py-3 lg:px-6">
           <nav className="flex flex-wrap gap-2">
             {navigationItems.map((item) => {
-              const isActive = pathname === item.href;
+              const isActive =
+                pathname === item.href || pathname.startsWith(`${item.href}/`);
 
               return (
                 <Link
