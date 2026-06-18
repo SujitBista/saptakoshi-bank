@@ -1,5 +1,5 @@
-import { AccountOpeningDocumentListContent } from "@/features/account-opening/AccountOpeningDocumentListContent";
+import { redirect } from "next/navigation";
 
 export default function AccountOpeningDocumentsPage() {
-  return <AccountOpeningDocumentListContent />;
+  redirect("/dashboard/account-opening-upload");
 }

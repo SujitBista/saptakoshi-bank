@@ -20,6 +20,7 @@ interface AccountOpeningUploadFormProps {
   onSubmit: (
     values: AccountOpeningUploadFormValues
   ) => Promise<AccountOpeningDocument>;
+  onUploadSuccess?: () => void;
 }
 
 const defaultValues: Omit<AccountOpeningUploadFormValues, "file"> = {
@@ -34,6 +35,7 @@ const defaultValues: Omit<AccountOpeningUploadFormValues, "file"> = {
 export function AccountOpeningUploadForm({
   branchCode,
   onSubmit,
+  onUploadSuccess,
 }: AccountOpeningUploadFormProps) {
   const [apiError, setApiError] = useState<string | null>(null);
   const [successDocumentNo, setSuccessDocumentNo] = useState<string | null>(null);
@@ -58,6 +60,7 @@ export function AccountOpeningUploadForm({
       const document = await onSubmit(values);
       setSuccessDocumentNo(document.documentNo);
       reset(defaultValues);
+      onUploadSuccess?.();
     } catch (error) {
       if (error instanceof ApiError) {
         setApiError(error.message);

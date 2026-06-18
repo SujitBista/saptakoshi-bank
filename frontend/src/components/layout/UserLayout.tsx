@@ -23,12 +23,9 @@ export function UserLayout({
   const navigationItems = [
     { href: "/dashboard", label: "Dashboard" },
     {
-      href: "/dashboard/account-opening-documents",
-      label: "Documents",
-    },
-    {
       href: "/dashboard/account-opening-upload",
-      label: "Upload",
+      label: "Account Opening",
+      matchPaths: ["/dashboard/account-opening-upload", "/dashboard/account-opening-documents"],
     },
   ];
 
@@ -70,8 +67,11 @@ export function UserLayout({
         <div className="border-t border-white/10 px-4 py-3 lg:px-6">
           <nav className="flex flex-wrap gap-2">
             {navigationItems.map((item) => {
-              const isActive =
-                pathname === item.href || pathname.startsWith(`${item.href}/`);
+              const pathsToMatch = item.matchPaths ?? [item.href];
+              const isActive = pathsToMatch.some(
+                (path) =>
+                  pathname === path || pathname.startsWith(`${path}/`)
+              );
 
               return (
                 <Link

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { UserLayout } from "@/components/layout/UserLayout";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
+import { AccountOpeningDocumentPdfViewer } from "@/features/account-opening/AccountOpeningDocumentPdfViewer";
 import {
   downloadAccountOpeningDocument,
   fetchAccountOpeningDocumentById,
@@ -84,8 +85,8 @@ export function AccountOpeningDocumentViewContent({
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Link href="/dashboard/account-opening-documents">
-              <Button variant="outline">Back to List</Button>
+            <Link href="/dashboard/account-opening-upload">
+              <Button variant="outline">Back</Button>
             </Link>
             {document ? (
               <>
@@ -122,39 +123,44 @@ export function AccountOpeningDocumentViewContent({
                 <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-blue-25 border-t-brand-blue" />
               </div>
             ) : (
-              <div className="grid gap-4 sm:grid-cols-2">
-                <DetailItem label="Document No." value={document.documentNo} />
-                <DetailItem label="Client Code" value={document.clientCode} />
-                <DetailItem label="First Name" value={document.firstName} />
-                <DetailItem label="Last Name" value={document.lastName} />
-                <DetailItem
-                  label="Father Name"
-                  value={document.fatherName || "—"}
-                />
-                <DetailItem label="Citizen No." value={document.citizenNo} />
-                <DetailItem label="Mobile Number" value={document.mobileNumber} />
-                <DetailItem label="Branch Code" value={document.branchCode} />
-                <DetailItem label="Branch Name" value={document.branchName} />
-                <DetailItem
-                  label="Uploaded By"
-                  value={document.uploadedByName}
-                />
-                <DetailItem
-                  label="File Name"
-                  value={document.originalFileName}
-                />
-                <DetailItem
-                  label="File Size"
-                  value={formatFileSize(document.fileSize)}
-                />
-                <DetailItem
-                  label="Uploaded Date"
-                  value={formatDocumentDate(document.createdAt)}
-                />
-                <DetailItem
-                  label="Last Updated"
-                  value={formatDocumentDate(document.updatedAt)}
-                />
+              <div className="space-y-6">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <DetailItem label="Document No." value={document.documentNo} />
+                  <DetailItem label="Client Code" value={document.clientCode} />
+                  <DetailItem label="First Name" value={document.firstName} />
+                  <DetailItem label="Last Name" value={document.lastName} />
+                  <DetailItem
+                    label="Father Name"
+                    value={document.fatherName || "—"}
+                  />
+                  <DetailItem label="Citizen No." value={document.citizenNo} />
+                  <DetailItem label="Mobile Number" value={document.mobileNumber} />
+                  <DetailItem label="Branch Code" value={document.branchCode} />
+                  <DetailItem label="Branch Name" value={document.branchName} />
+                  <DetailItem
+                    label="Uploaded By"
+                    value={document.uploadedByName}
+                  />
+                  <DetailItem
+                    label="File Size"
+                    value={formatFileSize(document.fileSize)}
+                  />
+                  <DetailItem
+                    label="Uploaded Date"
+                    value={formatDocumentDate(document.createdAt)}
+                  />
+                  <DetailItem
+                    label="Last Updated"
+                    value={formatDocumentDate(document.updatedAt)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-brand-blue">
+                    Uploaded Document
+                  </p>
+                  <AccountOpeningDocumentPdfViewer documentId={document.id} />
+                </div>
               </div>
             )}
           </CardContent>

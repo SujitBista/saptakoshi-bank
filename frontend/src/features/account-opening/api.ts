@@ -1,4 +1,4 @@
-import { apiClient } from "@/lib/api-client";
+import { apiClient, getApiBaseUrl } from "@/lib/api-client";
 import { getToken } from "@/lib/auth";
 import type {
   AccountOpeningDocument,
@@ -8,9 +8,6 @@ import type {
   AccountOpeningEditFormValues,
   AccountOpeningUploadFormValues,
 } from "@/features/account-opening/types";
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:4000";
 
 function buildSearchParams(filters: AccountOpeningDocumentSearchFilters): string {
   const params = new URLSearchParams();
@@ -110,10 +107,10 @@ export async function updateAccountOpeningDocument(
   return response.document;
 }
 
-export async function downloadAccountOpeningDocument(id: number): Promise<void> {
+async function fetchAccountOpeningDocumentFile(id: number): Promise<Response> {
   const token = getToken();
   const response = await fetch(
-    `${API_BASE_URL}/api/account-opening-documents/${id}/file`,
+    `${getApiBaseUrl()}/api/account-opening-documents/${id}/file`,
     {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     }
@@ -121,9 +118,22 @@ export async function downloadAccountOpeningDocument(id: number): Promise<void> 
 
   if (!response.ok) {
     const data = (await response.json().catch(() => null)) as { error?: string } | null;
-    throw new Error(data?.error ?? "Unable to download document");
+    throw new Error(data?.error ?? "Unable to load document");
   }
 
+  return response;
+}
+
+export async function getAccountOpeningDocumentFileObjectUrl(
+  id: number
+): Promise<string> {
+  const response = await fetchAccountOpeningDocumentFile(id);
+  const blob = await response.blob();
+  return URL.createObjectURL(blob);
+}
+
+export async function downloadAccountOpeningDocument(id: number): Promise<void> {
+  const response = await fetchAccountOpeningDocumentFile(id);
   const blob = await response.blob();
   const disposition = response.headers.get("Content-Disposition");
   const fileNameMatch = disposition?.match(/filename="([^"]+)"/);

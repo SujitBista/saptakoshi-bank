@@ -1,5 +1,14 @@
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:4000";
+function normalizeBaseUrl(value: string | undefined): string {
+  if (!value?.trim()) {
+    return "";
+  }
+
+  return value.replace(/\/$/, "");
+}
+
+export function getApiBaseUrl(): string {
+  return normalizeBaseUrl(process.env.NEXT_PUBLIC_API_URL);
+}
 
 export class ApiError extends Error {
   constructor(
@@ -23,7 +32,7 @@ export async function apiClient<T>(
   const { body, token, headers, ...rest } = options;
   const isFormData = body instanceof FormData;
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
     ...rest,
     headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -48,4 +57,19 @@ export async function apiClient<T>(
   }
 
   return data as T;
+}
+
+export function getApiErrorMessage(
+  error: unknown,
+  fallback = "Something went wrong. Please try again."
+): string {
+  if (error instanceof ApiError) {
+    return error.message;
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return fallback;
 }

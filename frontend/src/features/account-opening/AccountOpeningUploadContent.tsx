@@ -1,13 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import { UserLayout } from "@/components/layout/UserLayout";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
+import { AccountOpeningDocumentList } from "@/features/account-opening/AccountOpeningDocumentList";
 import { uploadAccountOpeningDocument } from "@/features/account-opening/api";
 import { AccountOpeningUploadForm } from "@/features/account-opening/AccountOpeningUploadForm";
 import { useUserAuth } from "@/hooks/useUserAuth";
 
 export function AccountOpeningUploadContent() {
   const { user, isReady, handleLogout } = useUserAuth();
+  const [listRefreshKey, setListRefreshKey] = useState(0);
 
   if (!isReady || !user) {
     return (
@@ -23,7 +26,7 @@ export function AccountOpeningUploadContent() {
       userRole={user.role}
       onLogout={handleLogout}
     >
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto max-w-6xl">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-brand-blue">
             Account Opening Upload
@@ -42,9 +45,18 @@ export function AccountOpeningUploadContent() {
             <AccountOpeningUploadForm
               branchCode={user.branchCode ?? ""}
               onSubmit={uploadAccountOpeningDocument}
+              onUploadSuccess={() => setListRefreshKey((key) => key + 1)}
             />
           </CardContent>
         </Card>
+
+        <div className="mt-8">
+          <AccountOpeningDocumentList
+            branchCode={user.branchCode ?? undefined}
+            refreshKey={listRefreshKey}
+            enabled={isReady}
+          />
+        </div>
       </div>
     </UserLayout>
   );
