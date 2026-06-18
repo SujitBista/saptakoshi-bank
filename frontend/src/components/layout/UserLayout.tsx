@@ -1,6 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { AdminBrand } from "@/components/layout/AdminBrand";
 import { Button } from "@/components/ui/Button";
 
@@ -17,6 +19,16 @@ export function UserLayout({
   userRole,
   onLogout,
 }: UserLayoutProps) {
+  const pathname = usePathname();
+  const navigationItems = [
+    { href: "/dashboard", label: "Dashboard" },
+    {
+      href: "/dashboard/account-opening-upload",
+      label: "Account Opening",
+      matchPaths: ["/dashboard/account-opening-upload", "/dashboard/account-opening-documents"],
+    },
+  ];
+
   return (
     <div className="flex min-h-screen flex-col bg-brand-blue-05">
       <header className="border-b-4 border-brand-green bg-brand-blue text-white shadow-md">
@@ -50,6 +62,32 @@ export function UserLayout({
               </Button>
             ) : null}
           </div>
+        </div>
+
+        <div className="border-t border-white/10 px-4 py-3 lg:px-6">
+          <nav className="flex flex-wrap gap-2">
+            {navigationItems.map((item) => {
+              const pathsToMatch = item.matchPaths ?? [item.href];
+              const isActive = pathsToMatch.some(
+                (path) =>
+                  pathname === path || pathname.startsWith(`${path}/`)
+              );
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                    isActive
+                      ? "bg-white text-brand-blue"
+                      : "bg-white/10 text-white hover:bg-white/20"
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
         </div>
       </header>
 
