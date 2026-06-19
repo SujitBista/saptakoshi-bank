@@ -17,6 +17,10 @@ export interface AccountOpeningDocumentRow {
   relative_file_path: string;
   mime_type: string | null;
   file_size: string | number | null;
+  status: string;
+  reviewed_by: number | null;
+  reviewed_at: Date | null;
+  rejection_remarks: string | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -25,6 +29,7 @@ export interface AccountOpeningDocumentDetailRow extends AccountOpeningDocumentR
   branch_code: string;
   branch_name: string;
   uploaded_by_name: string;
+  reviewed_by_name: string | null;
 }
 
 export interface AccountOpeningDocumentFilters {
@@ -32,6 +37,8 @@ export interface AccountOpeningDocumentFilters {
   clientCode?: string;
   documentNo?: string;
   branchId?: number;
+  uploadedBy?: number;
+  status?: string;
 }
 
 export interface AccountOpeningDocumentPagination {
@@ -96,11 +103,16 @@ const DETAIL_SELECT_COLUMNS = `
   d.relative_file_path,
   d.mime_type,
   d.file_size,
+  d.status,
+  d.reviewed_by,
+  d.reviewed_at,
+  d.rejection_remarks,
   d.created_at,
   d.updated_at,
   b.branch_code,
   b.branch_name,
-  u.full_name AS uploaded_by_name
+  u.full_name AS uploaded_by_name,
+  reviewer.full_name AS reviewed_by_name
 `;
 
 interface FilterClause {
@@ -115,6 +127,16 @@ function buildFilterClause(filters: AccountOpeningDocumentFilters): FilterClause
   if (filters.branchId !== undefined) {
     params.push(filters.branchId);
     conditions.push(`d.branch_id = $${params.length}`);
+  }
+
+  if (filters.uploadedBy !== undefined) {
+    params.push(filters.uploadedBy);
+    conditions.push(`d.uploaded_by = $${params.length}`);
+  }
+
+  if (filters.status?.trim()) {
+    params.push(filters.status.trim().toUpperCase());
+    conditions.push(`d.status = $${params.length}`);
   }
 
   if (filters.clientCode?.trim()) {
@@ -181,6 +203,7 @@ export async function findAll(
      FROM account_opening_documents d
      JOIN branches b ON b.id = d.branch_id
      JOIN users u ON u.id = d.uploaded_by
+     LEFT JOIN users reviewer ON reviewer.id = d.reviewed_by
      ${whereClause}
      ORDER BY d.created_at DESC, d.id DESC${paginationClause}`,
     queryParams
@@ -196,6 +219,7 @@ export async function findById(
      FROM account_opening_documents d
      JOIN branches b ON b.id = d.branch_id
      JOIN users u ON u.id = d.uploaded_by
+     LEFT JOIN users reviewer ON reviewer.id = d.reviewed_by
      WHERE d.id = $1`,
     [id]
   );
@@ -261,8 +285,18 @@ export async function findUniqueFieldConflicts(
 export async function update(
   id: number,
   input: UpdateAccountOpeningDocumentInput,
+  options?: { resubmit?: boolean },
   executor: DbExecutor = defaultExecutor
 ): Promise<AccountOpeningDocumentDetailRow | null> {
+  const resubmitClause = options?.resubmit
+    ? `,
+         status = 'PENDING',
+         reviewed_by = NULL,
+         reviewed_at = NULL,
+         rejection_remarks = NULL`
+    : "";
+  const statusFilter = options?.resubmit ? " AND status = 'REJECTED'" : "";
+
   const rows = await executor.query<{ id: number }>(
     `UPDATE account_opening_documents
      SET first_name = $2,
@@ -273,8 +307,8 @@ export async function update(
          original_file_name = COALESCE($7, original_file_name),
          mime_type = COALESCE($8, mime_type),
          file_size = COALESCE($9, file_size),
-         updated_at = NOW()
-     WHERE id = $1
+         updated_at = NOW()${resubmitClause}
+     WHERE id = $1${statusFilter}
      RETURNING id`,
     [
       id,
@@ -356,6 +390,10 @@ export async function create(
        relative_file_path,
        mime_type,
        file_size,
+       status,
+       reviewed_by,
+       reviewed_at,
+       rejection_remarks,
        created_at,
        updated_at`,
     [
@@ -377,4 +415,35 @@ export async function create(
   );
 
   return rows[0];
+}
+
+export interface UpdateDocumentReviewInput {
+  status: "APPROVED" | "REJECTED";
+  reviewedBy: number;
+  rejectionRemarks: string | null;
+}
+
+export async function updateReviewStatus(
+  id: number,
+  input: UpdateDocumentReviewInput,
+  executor: DbExecutor = defaultExecutor
+): Promise<AccountOpeningDocumentDetailRow | null> {
+  const rows = await executor.query<{ id: number }>(
+    `UPDATE account_opening_documents
+     SET status = $2,
+         reviewed_by = $3,
+         reviewed_at = NOW(),
+         rejection_remarks = $4,
+         updated_at = NOW()
+     WHERE id = $1
+       AND status = 'PENDING'
+     RETURNING id`,
+    [id, input.status, input.reviewedBy, input.rejectionRemarks]
+  );
+
+  if (!rows[0]) {
+    return null;
+  }
+
+  return findById(id, executor);
 }

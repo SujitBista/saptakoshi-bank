@@ -1,3 +1,5 @@
+import type { DocumentStatus } from "@saptakoshi/shared";
+
 export interface AccountOpeningUploadFormValues {
   clientCode: string;
   firstName: string;
@@ -36,6 +38,11 @@ export interface AccountOpeningDocument {
   relativeFilePath: string;
   mimeType: string | null;
   fileSize: number | null;
+  status: DocumentStatus;
+  reviewedBy: number | null;
+  reviewedByName: string | null;
+  reviewedAt: string | null;
+  rejectionRemarks: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -56,6 +63,8 @@ export interface AccountOpeningDocumentSearchFilters {
   search?: string;
   clientCode?: string;
   documentNo?: string;
+  branchId?: number;
+  status?: DocumentStatus;
   page?: number;
   limit?: number;
 }

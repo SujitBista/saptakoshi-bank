@@ -26,6 +26,7 @@ const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
     items: [
       { href: "/admin/branches", label: "Branches" },
       { href: "/admin/users", label: "Users" },
+      { href: "/admin/document-review", label: "Document Review" },
     ],
   },
 ];

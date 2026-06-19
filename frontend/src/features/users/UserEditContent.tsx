@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
-import { fetchBranches } from "@/features/branches/api";
+import { fetchAllBranches } from "@/features/branches/api";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { ApiError } from "@/lib/api-client";
 import {
@@ -33,14 +33,14 @@ export function UserEditContent({ userId }: UserEditContentProps) {
 
     async function loadData() {
       try {
-        const [userData, branchData] = await Promise.all([
+        const [userData, branches] = await Promise.all([
           fetchUserById(userId),
-          fetchBranches({ limit: 100 }),
+          fetchAllBranches(),
         ]);
 
         setDefaultValues(userToEditFormValues(userData));
         setBranchOptions(
-          branchData.branches.map((branch) => ({
+          branches.map((branch) => ({
             value: String(branch.id),
             label: `${branch.branchCode} — ${branch.branchName}`,
           }))

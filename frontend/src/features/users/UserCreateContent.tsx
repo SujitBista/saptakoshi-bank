@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
-import { fetchBranches } from "@/features/branches/api";
+import { fetchAllBranches } from "@/features/branches/api";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { createUser } from "@/features/users/api";
 import { UserCreateForm } from "@/features/users/UserCreateForm";
@@ -16,7 +16,7 @@ const DEFAULT_VALUES: UserFormValues = {
   email: "",
   password: "",
   branchId: "",
-  role: "USER",
+  role: "EMPLOYEE",
   status: "active",
 };
 
@@ -29,9 +29,9 @@ export function UserCreateContent() {
     if (!isReady) return;
 
     async function loadBranches() {
-      const data = await fetchBranches({ limit: 100 });
+      const branches = await fetchAllBranches();
       setBranchOptions(
-        data.branches.map((branch) => ({
+        branches.map((branch) => ({
           value: String(branch.id),
           label: `${branch.branchCode} — ${branch.branchName}`,
         }))

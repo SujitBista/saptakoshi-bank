@@ -3,23 +3,43 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AuthUser, UserRole } from "@saptakoshi/shared";
+import { USER_ROLES } from "@saptakoshi/shared";
 import { getUser, isAuthenticated, removeToken } from "@/lib/auth";
 
 type UseAuthOptions = {
   requiredRole?: UserRole;
+  allowedRoles?: UserRole[];
   loginPath?: string;
   forbiddenPath?: string;
 };
 
+function isRoleAllowed(
+  userRole: UserRole,
+  requiredRole?: UserRole,
+  allowedRoles?: UserRole[]
+): boolean {
+  if (allowedRoles && allowedRoles.length > 0) {
+    return allowedRoles.includes(userRole);
+  }
+
+  if (requiredRole) {
+    return userRole === requiredRole;
+  }
+
+  return true;
+}
+
 export function useAuth(options: UseAuthOptions = {}) {
   const {
     requiredRole,
+    allowedRoles,
     loginPath = "/login",
     forbiddenPath = "/dashboard",
   } = options;
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isReady, setIsReady] = useState(false);
+  const allowedRolesKey = allowedRoles?.join("|") ?? "";
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -35,16 +55,24 @@ export function useAuth(options: UseAuthOptions = {}) {
       return;
     }
 
-    if (requiredRole && storedUser.role !== requiredRole) {
+    if (!isRoleAllowed(storedUser.role, requiredRole, allowedRoles)) {
       router.replace(
-        storedUser.role === "ADMIN" ? "/admin/dashboard" : forbiddenPath
+        storedUser.role === USER_ROLES.ADMIN ? "/admin/dashboard" : forbiddenPath
       );
       return;
     }
 
-    setUser(storedUser);
+    setUser((current) =>
+      current?.id === storedUser.id &&
+      current.role === storedUser.role &&
+      current.branchId === storedUser.branchId
+        ? current
+        : storedUser
+    );
     setIsReady(true);
-  }, [forbiddenPath, loginPath, requiredRole, router]);
+    // router methods are stable; allowedRoles is keyed to avoid array identity loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allowedRolesKey, forbiddenPath, loginPath, requiredRole]);
 
   function handleLogout() {
     removeToken();

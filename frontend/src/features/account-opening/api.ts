@@ -24,6 +24,14 @@ function buildSearchParams(filters: AccountOpeningDocumentSearchFilters): string
     params.set("document_no", filters.documentNo.trim());
   }
 
+  if (filters.branchId !== undefined) {
+    params.set("branch_id", String(filters.branchId));
+  }
+
+  if (filters.status) {
+    params.set("status", filters.status);
+  }
+
   if (filters.page !== undefined) {
     params.set("page", String(filters.page));
   }
@@ -100,6 +108,36 @@ export async function updateAccountOpeningDocument(
     {
       method: "PUT",
       body: formData,
+      token: getToken(),
+    }
+  );
+
+  return response.document;
+}
+
+export async function approveAccountOpeningDocument(
+  id: number
+): Promise<AccountOpeningDocument> {
+  const response = await apiClient<AccountOpeningDocumentResponse>(
+    `/api/account-opening-documents/${id}/approve`,
+    {
+      method: "POST",
+      token: getToken(),
+    }
+  );
+
+  return response.document;
+}
+
+export async function rejectAccountOpeningDocument(
+  id: number,
+  rejectionRemarks: string
+): Promise<AccountOpeningDocument> {
+  const response = await apiClient<AccountOpeningDocumentResponse>(
+    `/api/account-opening-documents/${id}/reject`,
+    {
+      method: "POST",
+      body: { rejection_remarks: rejectionRemarks },
       token: getToken(),
     }
   );

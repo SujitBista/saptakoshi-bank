@@ -72,12 +72,12 @@ describe("auth middleware", () => {
     expect(next).toHaveBeenCalled();
   });
 
-  it("requireAdmin denies USER role", () => {
+  it("requireAdmin denies EMPLOYEE role", () => {
     const req = {
       user: {
         id: 2,
         email: "ram@saptakoshi.com",
-        role: USER_ROLES.USER,
+        role: USER_ROLES.EMPLOYEE,
         branch_id: 1,
       },
     } as Request;

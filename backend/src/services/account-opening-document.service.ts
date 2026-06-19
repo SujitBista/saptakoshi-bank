@@ -1,10 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { USER_ROLES } from "@saptakoshi/shared";
+import { DOCUMENT_STATUSES, USER_ROLES } from "@saptakoshi/shared";
 import { withTransaction } from "../config/database";
 import type { AuthenticatedUser } from "../middleware/auth.middleware";
 import * as accountOpeningDocumentRepository from "../repositories/account-opening-document.repository";
 import * as branchRepository from "../repositories/branch.repository";
+import * as documentReviewHistoryRepository from "../repositories/document-review-history.repository";
 import * as userRepository from "../repositories/user.repository";
 
 const ALLOWED_EXTENSIONS = new Set([".pdf"]);
@@ -40,6 +41,11 @@ export interface AccountOpeningDocumentDto {
   relativeFilePath: string;
   mimeType: string | null;
   fileSize: number | null;
+  status: string;
+  reviewedBy: number | null;
+  reviewedByName: string | null;
+  reviewedAt: string | null;
+  rejectionRemarks: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -74,6 +80,7 @@ export interface ListAccountOpeningDocumentsPayload {
   clientCode?: string;
   documentNo?: string;
   branchId?: number;
+  status?: string;
   page?: number;
   limit?: number;
 }
@@ -252,6 +259,11 @@ function toDocumentDto(
       row.file_size === null || row.file_size === undefined
         ? null
         : Number(row.file_size),
+    status: row.status,
+    reviewedBy: row.reviewed_by,
+    reviewedByName: detail.reviewed_by_name ?? null,
+    reviewedAt: row.reviewed_at ? row.reviewed_at.toISOString() : null,
+    rejectionRemarks: row.rejection_remarks,
     createdAt: row.created_at.toISOString(),
     updatedAt: row.updated_at.toISOString(),
   };
@@ -273,19 +285,143 @@ async function getActiveUser(
   return currentUser;
 }
 
-function resolveListBranchId(
+function resolveListFilters(
   currentUser: userRepository.UserWithBranchRow,
-  branchId?: number
-): number | undefined {
-  if (currentUser.role === USER_ROLES.USER) {
+  filters: {
+    branchId?: number;
+    status?: string;
+  }
+): { branchId?: number; uploadedBy?: number; status?: string } {
+  if (currentUser.role === USER_ROLES.EMPLOYEE) {
     if (!currentUser.branch_id) {
       throw new AccountOpeningDocumentError("Assigned branch is required");
     }
 
-    return currentUser.branch_id;
+    return {
+      branchId: currentUser.branch_id,
+      uploadedBy: currentUser.id,
+      status: filters.status,
+    };
   }
 
-  return branchId;
+  if (currentUser.role === USER_ROLES.BRANCH_MANAGER) {
+    if (!currentUser.branch_id) {
+      throw new AccountOpeningDocumentError("Assigned branch is required");
+    }
+
+    return {
+      branchId: currentUser.branch_id,
+      status: filters.status,
+    };
+  }
+
+  return {
+    branchId: filters.branchId,
+    status: filters.status,
+  };
+}
+
+function assertDocumentAccess(
+  currentUser: userRepository.UserWithBranchRow,
+  document: accountOpeningDocumentRepository.AccountOpeningDocumentDetailRow
+): void {
+  if (currentUser.role === USER_ROLES.ADMIN) {
+    return;
+  }
+
+  if (currentUser.role === USER_ROLES.EMPLOYEE) {
+    if (document.uploaded_by !== currentUser.id) {
+      throw new AccountOpeningDocumentError("Forbidden", 403);
+    }
+
+    return;
+  }
+
+  if (currentUser.role === USER_ROLES.BRANCH_MANAGER) {
+    if (!currentUser.branch_id || document.branch_id !== currentUser.branch_id) {
+      throw new AccountOpeningDocumentError(
+        "Document is not in your assigned branch",
+        403
+      );
+    }
+
+    return;
+  }
+
+  throw new AccountOpeningDocumentError("Forbidden", 403);
+}
+
+function assertCanReviewDocument(
+  currentUser: userRepository.UserWithBranchRow,
+  document: accountOpeningDocumentRepository.AccountOpeningDocumentDetailRow
+): void {
+  if (
+    currentUser.role !== USER_ROLES.ADMIN &&
+    currentUser.role !== USER_ROLES.BRANCH_MANAGER
+  ) {
+    throw new AccountOpeningDocumentError("Forbidden", 403);
+  }
+
+  if (currentUser.role === USER_ROLES.BRANCH_MANAGER) {
+    if (!currentUser.branch_id || document.branch_id !== currentUser.branch_id) {
+      throw new AccountOpeningDocumentError(
+        "Document is not in your assigned branch",
+        403
+      );
+    }
+  }
+}
+
+function assertCanUpload(
+  currentUser: userRepository.UserWithBranchRow
+): void {
+  if (
+    currentUser.role !== USER_ROLES.EMPLOYEE &&
+    currentUser.role !== USER_ROLES.ADMIN
+  ) {
+    throw new AccountOpeningDocumentError("Forbidden", 403);
+  }
+}
+
+function assertCanUpdate(
+  currentUser: userRepository.UserWithBranchRow,
+  document: accountOpeningDocumentRepository.AccountOpeningDocumentDetailRow
+): void {
+  if (currentUser.role === USER_ROLES.ADMIN) {
+    return;
+  }
+
+  if (currentUser.role === USER_ROLES.EMPLOYEE) {
+    if (document.uploaded_by !== currentUser.id) {
+      throw new AccountOpeningDocumentError("Forbidden", 403);
+    }
+
+    if (document.status === DOCUMENT_STATUSES.APPROVED) {
+      throw new AccountOpeningDocumentError(
+        "Approved documents cannot be edited",
+        409
+      );
+    }
+
+    return;
+  }
+
+  throw new AccountOpeningDocumentError("Forbidden", 403);
+}
+
+function normalizeStatusFilter(status?: string): string | undefined {
+  if (!status?.trim()) {
+    return undefined;
+  }
+
+  const normalized = status.trim().toUpperCase();
+  const allowed = new Set(Object.values(DOCUMENT_STATUSES));
+
+  if (!allowed.has(normalized as (typeof DOCUMENT_STATUSES)[keyof typeof DOCUMENT_STATUSES])) {
+    throw new AccountOpeningDocumentError("Invalid document status");
+  }
+
+  return normalized;
 }
 
 async function getAccessibleDocument(
@@ -298,12 +434,7 @@ async function getAccessibleDocument(
     throw new AccountOpeningDocumentError("Document not found", 404);
   }
 
-  if (
-    currentUser.role === USER_ROLES.USER &&
-    document.branch_id !== currentUser.branch_id
-  ) {
-    throw new AccountOpeningDocumentError("Forbidden", 403);
-  }
+  assertDocumentAccess(currentUser, document);
 
   return document;
 }
@@ -319,7 +450,7 @@ async function resolveBranchForUpload(
   currentUser: userRepository.UserWithBranchRow,
   branchIdValue?: string
 ): Promise<branchRepository.BranchRow> {
-  if (currentUser.role === USER_ROLES.USER) {
+  if (currentUser.role === USER_ROLES.EMPLOYEE) {
     if (!currentUser.branch_id || !currentUser.branch_code) {
       throw new AccountOpeningDocumentError("Assigned branch is required for uploads");
     }
@@ -362,6 +493,7 @@ export async function uploadAccountOpeningDocument(
   payload: UploadAccountOpeningDocumentPayload
 ): Promise<AccountOpeningDocumentDto> {
   const currentUser = await getActiveUser(payload.authenticatedUser);
+  assertCanUpload(currentUser);
 
   const file = payload.file;
   if (!file) {
@@ -476,13 +608,18 @@ export async function listAccountOpeningDocuments(
     payload.limit ?? DEFAULT_ACCOUNT_OPENING_PAGE_SIZE,
     MAX_ACCOUNT_OPENING_PAGE_SIZE
   );
-  const branchId = resolveListBranchId(currentUser, payload.branchId);
+  const listFilters = resolveListFilters(currentUser, {
+    branchId: payload.branchId,
+    status: normalizeStatusFilter(payload.status),
+  });
 
   const filters = {
     search: payload.search,
     clientCode: payload.clientCode,
     documentNo: payload.documentNo,
-    branchId,
+    branchId: listFilters.branchId,
+    uploadedBy: listFilters.uploadedBy,
+    status: listFilters.status,
   };
 
   const [total, rows] = await Promise.all([
@@ -536,6 +673,7 @@ export async function updateAccountOpeningDocument(
 ): Promise<AccountOpeningDocumentDto> {
   const currentUser = await getActiveUser(payload.authenticatedUser);
   const document = await getAccessibleDocument(currentUser, payload.documentId);
+  assertCanUpdate(currentUser, document);
 
   const firstName = sanitizeText(payload.firstName, "First name", 100) as string;
   const lastName = sanitizeText(payload.lastName, "Last name", 100) as string;
@@ -588,23 +726,118 @@ export async function updateAccountOpeningDocument(
     payload.documentId
   );
 
-  const updated = await accountOpeningDocumentRepository.update(
-    payload.documentId,
-    {
-      firstName,
-      lastName,
-      fatherName,
-      citizenNo,
-      mobileNumber,
-      originalFileName: fileUpdate?.originalFileName,
-      mimeType: fileUpdate?.mimeType,
-      fileSize: fileUpdate?.fileSize,
-    }
-  );
+  const isResubmit =
+    currentUser.role === USER_ROLES.EMPLOYEE &&
+    document.status === DOCUMENT_STATUSES.REJECTED;
 
-  if (!updated) {
-    throw new AccountOpeningDocumentError("Document not found", 404);
-  }
+  const updated = await withTransaction(async (executor) => {
+    const row = await accountOpeningDocumentRepository.update(
+      payload.documentId,
+      {
+        firstName,
+        lastName,
+        fatherName,
+        citizenNo,
+        mobileNumber,
+        originalFileName: fileUpdate?.originalFileName,
+        mimeType: fileUpdate?.mimeType,
+        fileSize: fileUpdate?.fileSize,
+      },
+      { resubmit: isResubmit },
+      executor
+    );
+
+    if (!row) {
+      throw new AccountOpeningDocumentError("Document not found", 404);
+    }
+
+    if (isResubmit) {
+      await documentReviewHistoryRepository.insert(
+        {
+          documentId: payload.documentId,
+          action: "RESUBMITTED",
+          performedBy: currentUser.id,
+        },
+        executor
+      );
+    }
+
+    return row;
+  });
 
   return toDocumentDto(updated);
+}
+
+export interface ReviewAccountOpeningDocumentPayload {
+  authenticatedUser: AuthenticatedUser;
+  documentId: number;
+  rejectionRemarks?: string;
+}
+
+async function reviewAccountOpeningDocument(
+  payload: ReviewAccountOpeningDocumentPayload,
+  status: "APPROVED" | "REJECTED"
+): Promise<AccountOpeningDocumentDto> {
+  const currentUser = await getActiveUser(payload.authenticatedUser);
+  const document = await getAccessibleDocument(currentUser, payload.documentId);
+  assertCanReviewDocument(currentUser, document);
+
+  if (document.status !== DOCUMENT_STATUSES.PENDING) {
+    throw new AccountOpeningDocumentError("Document has already been reviewed", 409);
+  }
+
+  let rejectionRemarks: string | null = null;
+
+  if (status === "REJECTED") {
+    rejectionRemarks = sanitizeText(
+      payload.rejectionRemarks,
+      "Rejection remarks",
+      500
+    );
+  }
+
+  const updated = await withTransaction(async (executor) => {
+    const row = await accountOpeningDocumentRepository.updateReviewStatus(
+      payload.documentId,
+      {
+        status,
+        reviewedBy: currentUser.id,
+        rejectionRemarks,
+      },
+      executor
+    );
+
+    if (!row) {
+      throw new AccountOpeningDocumentError(
+        "Document has already been reviewed",
+        409
+      );
+    }
+
+    await documentReviewHistoryRepository.insert(
+      {
+        documentId: payload.documentId,
+        action: status,
+        performedBy: currentUser.id,
+        remarks: rejectionRemarks,
+      },
+      executor
+    );
+
+    return row;
+  });
+
+  return toDocumentDto(updated);
+}
+
+export async function approveAccountOpeningDocument(
+  payload: ReviewAccountOpeningDocumentPayload
+): Promise<AccountOpeningDocumentDto> {
+  return reviewAccountOpeningDocument(payload, "APPROVED");
+}
+
+export async function rejectAccountOpeningDocument(
+  payload: ReviewAccountOpeningDocumentPayload
+): Promise<AccountOpeningDocumentDto> {
+  return reviewAccountOpeningDocument(payload, "REJECTED");
 }

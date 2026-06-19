@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const roleSchema = z.enum(["ADMIN", "USER"]);
+const roleSchema = z.enum(["ADMIN", "EMPLOYEE", "BRANCH_MANAGER"]);
 const statusSchema = z.enum(["active", "inactive"]);
 
 export const userCreateFormSchema = z
@@ -27,10 +27,13 @@ export const userCreateFormSchema = z
     status: statusSchema,
   })
   .superRefine((values, context) => {
-    if (values.role === "USER" && !values.branchId) {
+    if (
+      (values.role === "EMPLOYEE" || values.role === "BRANCH_MANAGER") &&
+      !values.branchId
+    ) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Branch is required for USER role",
+        message: `Branch is required for ${values.role} role`,
         path: ["branchId"],
       });
     }
@@ -59,10 +62,13 @@ export const userEditFormSchema = z
     status: statusSchema,
   })
   .superRefine((values, context) => {
-    if (values.role === "USER" && !values.branchId) {
+    if (
+      (values.role === "EMPLOYEE" || values.role === "BRANCH_MANAGER") &&
+      !values.branchId
+    ) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Branch is required for USER role",
+        message: `Branch is required for ${values.role} role`,
         path: ["branchId"],
       });
     }

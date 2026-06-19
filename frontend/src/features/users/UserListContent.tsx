@@ -35,7 +35,8 @@ const SEARCH_DEBOUNCE_MS = 300;
 const ROLE_FILTER_OPTIONS = [
   { value: "", label: "All roles" },
   { value: "ADMIN", label: "Admin" },
-  { value: "USER", label: "User" },
+  { value: "EMPLOYEE", label: "Employee" },
+  { value: "BRANCH_MANAGER", label: "Branch Manager" },
 ];
 
 const STATUS_FILTER_OPTIONS = [

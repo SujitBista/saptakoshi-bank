@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { USER_ROLES } from "@saptakoshi/shared";
 import { AdminBrand } from "@/components/layout/AdminBrand";
 import { Button } from "@/components/ui/Button";
 
@@ -13,6 +14,40 @@ type UserLayoutProps = {
   onLogout?: () => void;
 };
 
+type NavigationItem = {
+  href: string;
+  label: string;
+  matchPaths?: string[];
+};
+
+function getNavigationItems(userRole?: string): NavigationItem[] {
+  const items: NavigationItem[] = [
+    { href: "/dashboard", label: "Dashboard" },
+  ];
+
+  if (userRole === USER_ROLES.BRANCH_MANAGER) {
+    items.push({
+      href: "/dashboard/document-review",
+      label: "Document Review",
+      matchPaths: ["/dashboard/document-review"],
+    });
+    return items;
+  }
+
+  if (userRole === USER_ROLES.EMPLOYEE) {
+    items.push({
+      href: "/dashboard/account-opening-upload",
+      label: "Account Opening",
+      matchPaths: [
+        "/dashboard/account-opening-upload",
+        "/dashboard/account-opening-documents",
+      ],
+    });
+  }
+
+  return items;
+}
+
 export function UserLayout({
   children,
   userEmail,
@@ -20,14 +55,7 @@ export function UserLayout({
   onLogout,
 }: UserLayoutProps) {
   const pathname = usePathname();
-  const navigationItems = [
-    { href: "/dashboard", label: "Dashboard" },
-    {
-      href: "/dashboard/account-opening-upload",
-      label: "Account Opening",
-      matchPaths: ["/dashboard/account-opening-upload", "/dashboard/account-opening-documents"],
-    },
-  ];
+  const navigationItems = getNavigationItems(userRole);
 
   return (
     <div className="flex min-h-screen flex-col bg-brand-blue-05">

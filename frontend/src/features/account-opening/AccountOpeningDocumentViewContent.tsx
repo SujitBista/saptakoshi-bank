@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { DOCUMENT_STATUSES } from "@saptakoshi/shared";
 import { UserLayout } from "@/components/layout/UserLayout";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
@@ -13,7 +14,7 @@ import {
   formatFileSize,
 } from "@/features/account-opening/api";
 import type { AccountOpeningDocument } from "@/features/account-opening/types";
-import { useUserAuth } from "@/hooks/useUserAuth";
+import { useEmployeeAuth } from "@/hooks/useUserAuth";
 import { ApiError } from "@/lib/api-client";
 
 interface AccountOpeningDocumentViewContentProps {
@@ -23,7 +24,7 @@ interface AccountOpeningDocumentViewContentProps {
 export function AccountOpeningDocumentViewContent({
   documentId,
 }: AccountOpeningDocumentViewContentProps) {
-  const { user, isReady, handleLogout } = useUserAuth();
+  const { user, isReady, handleLogout } = useEmployeeAuth();
   const [document, setDocument] = useState<AccountOpeningDocument | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -97,9 +98,15 @@ export function AccountOpeningDocumentViewContent({
                 >
                   Download PDF
                 </Button>
-                <Link href={`/dashboard/account-opening-documents/${document.id}/edit`}>
-                  <Button>Edit Document</Button>
-                </Link>
+                {document.status !== DOCUMENT_STATUSES.APPROVED ? (
+                  <Link href={`/dashboard/account-opening-documents/${document.id}/edit`}>
+                    <Button>
+                      {document.status === DOCUMENT_STATUSES.REJECTED
+                        ? "Edit & Resubmit"
+                        : "Edit Document"}
+                    </Button>
+                  </Link>
+                ) : null}
               </>
             ) : null}
           </div>
@@ -124,7 +131,21 @@ export function AccountOpeningDocumentViewContent({
               </div>
             ) : (
               <div className="space-y-6">
+                {document.status === DOCUMENT_STATUSES.REJECTED ? (
+                  <div
+                    className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+                    role="status"
+                  >
+                    This document was rejected
+                    {document.rejectionRemarks
+                      ? `: ${document.rejectionRemarks}`
+                      : "."}{" "}
+                    Update the details or PDF and save to resubmit for review.
+                  </div>
+                ) : null}
+
                 <div className="grid gap-4 sm:grid-cols-2">
+                  <DetailItem label="Status" value={document.status} />
                   <DetailItem label="Document No." value={document.documentNo} />
                   <DetailItem label="Client Code" value={document.clientCode} />
                   <DetailItem label="First Name" value={document.firstName} />
@@ -153,6 +174,26 @@ export function AccountOpeningDocumentViewContent({
                     label="Last Updated"
                     value={formatDocumentDate(document.updatedAt)}
                   />
+                  {document.reviewedAt ? (
+                    <>
+                      <DetailItem
+                        label="Reviewed By"
+                        value={document.reviewedByName ?? "—"}
+                      />
+                      <DetailItem
+                        label="Reviewed At"
+                        value={formatDocumentDate(document.reviewedAt)}
+                      />
+                    </>
+                  ) : null}
+                  {document.rejectionRemarks ? (
+                    <div className="sm:col-span-2">
+                      <DetailItem
+                        label="Rejection Remarks"
+                        value={document.rejectionRemarks}
+                      />
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="space-y-2">

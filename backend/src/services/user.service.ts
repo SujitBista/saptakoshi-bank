@@ -87,9 +87,10 @@ function normalizeRole(role: string): string {
 
 function validateRole(role: string): string {
   const normalized = normalizeRole(role);
+  const allowedRoles = new Set<string>(Object.values(USER_ROLES));
 
-  if (normalized !== USER_ROLES.ADMIN && normalized !== USER_ROLES.USER) {
-    throw new UserError("Role must be ADMIN or USER");
+  if (!allowedRoles.has(normalized)) {
+    throw new UserError("Role must be ADMIN, EMPLOYEE, or BRANCH_MANAGER");
   }
 
   return normalized;
@@ -124,9 +125,9 @@ async function validateBranchForRole(
   role: string,
   branchId: number | null | undefined
 ): Promise<number | null> {
-  if (role === USER_ROLES.USER) {
+  if (role === USER_ROLES.EMPLOYEE || role === USER_ROLES.BRANCH_MANAGER) {
     if (branchId === undefined || branchId === null) {
-      throw new UserError("Branch is required for USER role");
+      throw new UserError(`Branch is required for ${role} role`);
     }
 
     const branch = await branchRepository.findById(branchId);
@@ -240,7 +241,7 @@ export async function createUser(payload: CreateUserPayload): Promise<UserDto> {
   const email = validateEmail(payload.email ?? "");
   await ensureUniqueEmail(email);
 
-  const role = validateRole(payload.role ?? USER_ROLES.USER);
+  const role = validateRole(payload.role ?? USER_ROLES.EMPLOYEE);
   const branchId = await validateBranchForRole(role, payload.branchId ?? null);
   const password = validatePassword(payload.password, "Temporary password");
   const passwordHash = await hashPassword(password);
