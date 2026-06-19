@@ -41,7 +41,7 @@ export function AdminDocumentReviewContent() {
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-brand-blue">Document Review</h1>
           <p className="mt-1 text-sm text-brand-black-75">
-            Review and approve pending account opening documents across all branches.
+            Review and view account opening documents across all branches.
           </p>
         </div>
 

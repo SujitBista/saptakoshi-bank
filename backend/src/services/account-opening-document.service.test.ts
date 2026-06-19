@@ -269,6 +269,32 @@ describe("account-opening-document.service", () => {
     });
   });
 
+  it("lists all document statuses for branch managers when no status filter is provided", async () => {
+    vi.mocked(userRepository.findById).mockResolvedValue(branchManagerOne);
+    vi.mocked(accountOpeningDocumentRepository.countAll).mockResolvedValue(3);
+    vi.mocked(accountOpeningDocumentRepository.findAll).mockResolvedValue([
+      documentRow,
+      { ...documentRow, id: 12, status: DOCUMENT_STATUSES.APPROVED },
+      { ...documentRow, id: 13, status: DOCUMENT_STATUSES.REJECTED },
+    ]);
+
+    const result = await listAccountOpeningDocuments({
+      authenticatedUser: branchManagerAuthUser,
+      page: 1,
+      limit: 10,
+    });
+
+    expect(accountOpeningDocumentRepository.countAll).toHaveBeenCalledWith({
+      search: undefined,
+      clientCode: undefined,
+      documentNo: undefined,
+      branchId: 1,
+      uploadedBy: undefined,
+      status: undefined,
+    });
+    expect(result.data).toHaveLength(3);
+  });
+
   it("rejects cross-branch document access for employees", async () => {
     vi.mocked(userRepository.findById).mockResolvedValue({
       ...currentEmployee,

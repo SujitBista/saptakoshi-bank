@@ -1,4 +1,4 @@
-type BadgeVariant = "success" | "neutral";
+type BadgeVariant = "success" | "warning" | "danger" | "neutral";
 
 interface BadgeProps {
   children: string;
@@ -7,6 +7,8 @@ interface BadgeProps {
 
 const variantClasses: Record<BadgeVariant, string> = {
   success: "bg-brand-green-05 text-brand-green border-brand-green-15",
+  warning: "bg-amber-50 text-amber-900 border-amber-200",
+  danger: "bg-red-50 text-red-700 border-red-200",
   neutral: "bg-brand-black-05 text-brand-black-75 border-brand-black-15",
 };
 

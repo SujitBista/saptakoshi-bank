@@ -18,7 +18,11 @@ import {
   fetchAccountOpeningDocuments,
   formatDocumentDate,
 } from "@/features/account-opening/api";
-import type { AccountOpeningDocument } from "@/features/account-opening/types";
+import { DocumentStatusBadge } from "@/features/account-opening/DocumentStatusBadge";
+import type {
+  AccountOpeningDocument,
+  DocumentStatusFilter,
+} from "@/features/account-opening/types";
 import {
   DEFAULT_ACCOUNT_OPENING_PAGE,
   DEFAULT_ACCOUNT_OPENING_PAGE_SIZE,
@@ -28,6 +32,13 @@ import { getApiErrorMessage } from "@/lib/api-client";
 import { getToken } from "@/lib/auth";
 
 const SEARCH_DEBOUNCE_MS = 300;
+
+const STATUS_FILTER_OPTIONS: Array<{ value: DocumentStatusFilter; label: string }> = [
+  { value: "ALL", label: "All" },
+  { value: DOCUMENT_STATUSES.PENDING, label: "Pending" },
+  { value: DOCUMENT_STATUSES.APPROVED, label: "Approved" },
+  { value: DOCUMENT_STATUSES.REJECTED, label: "Rejected" },
+];
 
 interface DocumentReviewListProps {
   branchCode?: string;
@@ -55,6 +66,7 @@ export function DocumentReviewList({
   const [documents, setDocuments] = useState<AccountOpeningDocument[]>([]);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<DocumentStatusFilter>("ALL");
   const [page, setPage] = useState(DEFAULT_ACCOUNT_OPENING_PAGE);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -73,7 +85,7 @@ export function DocumentReviewList({
     try {
       const data = await fetchAccountOpeningDocuments({
         search: debouncedSearch,
-        status: DOCUMENT_STATUSES.PENDING,
+        status: statusFilter === "ALL" ? undefined : statusFilter,
         branchId,
         page,
         limit: DEFAULT_ACCOUNT_OPENING_PAGE_SIZE,
@@ -88,12 +100,12 @@ export function DocumentReviewList({
       }
     } catch (err) {
       setError(
-        getApiErrorMessage(err, "Unable to load pending documents. Please try again.")
+        getApiErrorMessage(err, "Unable to load documents. Please try again.")
       );
     } finally {
       setIsLoading(false);
     }
-  }, [branchId, debouncedSearch, enabled, page]);
+  }, [branchId, debouncedSearch, enabled, page, statusFilter]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -120,41 +132,67 @@ export function DocumentReviewList({
   return (
     <Card>
       <CardHeader
-        title="Pending Documents"
+        title="Documents"
         description={
           showBranchColumn
-            ? "Review pending account opening documents across branches"
-            : `Review pending account opening documents for branch ${branchCode ?? "—"}`
+            ? "Review and view account opening documents across branches"
+            : `Review and view account opening documents for branch ${branchCode ?? "—"}`
         }
       />
       <CardContent className="space-y-5">
-        {showBranchColumn && onBranchChange ? (
-          <div className="max-w-xs">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+          <div className="max-w-xs flex-1">
             <label
-              htmlFor="branch-filter"
+              htmlFor="status-filter"
               className="mb-1.5 block text-sm font-medium text-brand-black"
             >
-              Branch
+              Status
             </label>
             <select
-              id="branch-filter"
-              value={selectedBranchId ?? ""}
+              id="status-filter"
+              value={statusFilter}
               onChange={(event) => {
-                const value = event.target.value;
-                onBranchChange(value ? Number(value) : undefined);
+                setStatusFilter(event.target.value as DocumentStatusFilter);
                 setPage(DEFAULT_ACCOUNT_OPENING_PAGE);
               }}
               className="w-full rounded-lg border border-brand-black-15 bg-white px-3 py-2 text-sm text-brand-black"
             >
-              <option value="">All branches</option>
-              {branches.map((branch) => (
-                <option key={branch.id} value={branch.id}>
-                  {branch.branchCode} — {branch.branchName}
+              {STATUS_FILTER_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
                 </option>
               ))}
             </select>
           </div>
-        ) : null}
+
+          {showBranchColumn && onBranchChange ? (
+            <div className="max-w-xs flex-1">
+              <label
+                htmlFor="branch-filter"
+                className="mb-1.5 block text-sm font-medium text-brand-black"
+              >
+                Branch
+              </label>
+              <select
+                id="branch-filter"
+                value={selectedBranchId ?? ""}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  onBranchChange(value ? Number(value) : undefined);
+                  setPage(DEFAULT_ACCOUNT_OPENING_PAGE);
+                }}
+                className="w-full rounded-lg border border-brand-black-15 bg-white px-3 py-2 text-sm text-brand-black"
+              >
+                <option value="">All branches</option>
+                {branches.map((branch) => (
+                  <option key={branch.id} value={branch.id}>
+                    {branch.branchCode} — {branch.branchName}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
+        </div>
 
         <Input
           label="Search"
@@ -178,11 +216,10 @@ export function DocumentReviewList({
           </div>
         ) : documents.length === 0 ? (
           <div className="rounded-lg border border-brand-blue-15 bg-brand-blue-05 px-4 py-6 text-center text-sm text-brand-black-75">
-            <p>No pending documents found for branch {branchCode ?? "—"}.</p>
+            <p>No documents found{branchCode ? ` for branch ${branchCode}` : ""}.</p>
             <p className="mt-2">
-              Only pending submissions uploaded to your assigned branch appear here.
-              Ask an administrator to confirm your branch assignment if you expected
-              documents from another branch.
+              Try adjusting your search or status filter. Documents remain visible
+              after approval or rejection.
             </p>
           </div>
         ) : (
@@ -190,13 +227,16 @@ export function DocumentReviewList({
             <TableHead>
               <TableRow>
                 <TableHeaderCell>Document No.</TableHeaderCell>
-                <TableHeaderCell>Client Code</TableHeaderCell>
-                <TableHeaderCell>Customer Name</TableHeaderCell>
+                <TableHeaderCell>Customer</TableHeaderCell>
                 {showBranchColumn ? (
                   <TableHeaderCell>Branch</TableHeaderCell>
                 ) : null}
+                <TableHeaderCell>Status</TableHeaderCell>
                 <TableHeaderCell>Uploaded By</TableHeaderCell>
                 <TableHeaderCell>Uploaded</TableHeaderCell>
+                <TableHeaderCell>Reviewed By</TableHeaderCell>
+                <TableHeaderCell>Reviewed At</TableHeaderCell>
+                <TableHeaderCell>Rejection Remarks</TableHeaderCell>
                 <TableHeaderCell>Actions</TableHeaderCell>
               </TableRow>
             </TableHead>
@@ -206,7 +246,6 @@ export function DocumentReviewList({
                   <TableCell className="font-medium text-brand-blue">
                     {document.documentNo}
                   </TableCell>
-                  <TableCell>{document.clientCode}</TableCell>
                   <TableCell>
                     {document.firstName} {document.lastName}
                   </TableCell>
@@ -215,8 +254,20 @@ export function DocumentReviewList({
                       {document.branchCode} — {document.branchName}
                     </TableCell>
                   ) : null}
+                  <TableCell>
+                    <DocumentStatusBadge status={document.status} />
+                  </TableCell>
                   <TableCell>{document.uploadedByName}</TableCell>
                   <TableCell>{formatDocumentDate(document.createdAt)}</TableCell>
+                  <TableCell>{document.reviewedByName ?? "—"}</TableCell>
+                  <TableCell>
+                    {document.reviewedAt
+                      ? formatDocumentDate(document.reviewedAt)
+                      : "—"}
+                  </TableCell>
+                  <TableCell className="max-w-xs truncate">
+                    {document.rejectionRemarks ?? "—"}
+                  </TableCell>
                   <TableCell>
                     <div className="flex justify-end">
                       <Button
@@ -224,7 +275,9 @@ export function DocumentReviewList({
                         variant="outline"
                         className="px-3 py-1.5 text-xs"
                       >
-                        Review
+                        {document.status === DOCUMENT_STATUSES.PENDING
+                          ? "Review"
+                          : "View"}
                       </Button>
                     </div>
                   </TableCell>
