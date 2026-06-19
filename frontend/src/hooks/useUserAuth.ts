@@ -1,13 +1,14 @@
 "use client";
 
+import type { UserRole } from "@saptakoshi/shared";
 import { USER_ROLES } from "@saptakoshi/shared";
 import { useAuth } from "@/hooks/useAuth";
 
-const STAFF_ROLES = [USER_ROLES.EMPLOYEE, USER_ROLES.BRANCH_MANAGER] as const;
+const STAFF_ROLES: UserRole[] = [USER_ROLES.EMPLOYEE, USER_ROLES.BRANCH_MANAGER];
 
 export function useStaffAuth() {
   return useAuth({
-    allowedRoles: [...STAFF_ROLES],
+    allowedRoles: STAFF_ROLES,
     loginPath: "/login",
     forbiddenPath: "/admin/dashboard",
   });

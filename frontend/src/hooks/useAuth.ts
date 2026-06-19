@@ -39,6 +39,7 @@ export function useAuth(options: UseAuthOptions = {}) {
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isReady, setIsReady] = useState(false);
+  const allowedRolesKey = allowedRoles?.join("|") ?? "";
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -61,9 +62,17 @@ export function useAuth(options: UseAuthOptions = {}) {
       return;
     }
 
-    setUser(storedUser);
+    setUser((current) =>
+      current?.id === storedUser.id &&
+      current.role === storedUser.role &&
+      current.branchId === storedUser.branchId
+        ? current
+        : storedUser
+    );
     setIsReady(true);
-  }, [allowedRoles, forbiddenPath, loginPath, requiredRole, router]);
+    // router methods are stable; allowedRoles is keyed to avoid array identity loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allowedRolesKey, forbiddenPath, loginPath, requiredRole]);
 
   function handleLogout() {
     removeToken();

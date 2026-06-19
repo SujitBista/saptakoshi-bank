@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DOCUMENT_STATUSES, USER_ROLES } from "@saptakoshi/shared";
@@ -146,9 +145,9 @@ export function DocumentReviewViewContent({
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
-          <Link href={reviewListPath}>
-            <Button variant="outline">Back</Button>
-          </Link>
+          <Button href={reviewListPath} variant="outline">
+            Back
+          </Button>
           {document ? (
             <Button
               variant="outline"
