@@ -43,7 +43,7 @@ export interface UserFormValues {
   email: string;
   password: string;
   branchId: string;
-  role: "ADMIN" | "USER";
+  role: "ADMIN" | "EMPLOYEE" | "BRANCH_MANAGER";
   status: "active" | "inactive";
 }
 
@@ -52,7 +52,7 @@ export interface UserEditFormValues {
   username: string;
   email: string;
   branchId: string;
-  role: "ADMIN" | "USER";
+  role: "ADMIN" | "EMPLOYEE" | "BRANCH_MANAGER";
   status: "active" | "inactive";
 }
 

@@ -2,10 +2,10 @@
 
 import { UserLayout } from "@/components/layout/UserLayout";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
-import { useUserAuth } from "@/hooks/useUserAuth";
+import { useStaffAuth } from "@/hooks/useUserAuth";
 
 export function UserDashboardContent() {
-  const { user, isReady, handleLogout } = useUserAuth();
+  const { user, isReady, handleLogout } = useStaffAuth();
 
   if (!isReady || !user) {
     return (

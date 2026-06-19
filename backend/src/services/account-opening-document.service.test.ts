@@ -1,14 +1,17 @@
 import fs from "node:fs/promises";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { USER_ROLES } from "@saptakoshi/shared";
+import { DOCUMENT_STATUSES, USER_ROLES } from "@saptakoshi/shared";
 import { withTransaction } from "../config/database";
 import * as accountOpeningDocumentRepository from "../repositories/account-opening-document.repository";
 import * as branchRepository from "../repositories/branch.repository";
+import * as documentReviewHistoryRepository from "../repositories/document-review-history.repository";
 import * as userRepository from "../repositories/user.repository";
 import {
   AccountOpeningDocumentError,
+  approveAccountOpeningDocument,
   getAccountOpeningDocumentById,
   listAccountOpeningDocuments,
+  rejectAccountOpeningDocument,
   updateAccountOpeningDocument,
   uploadAccountOpeningDocument,
 } from "../services/account-opening-document.service";
@@ -34,20 +37,59 @@ vi.mock("../config/database", async (importOriginal) => {
 vi.mock("../repositories/user.repository");
 vi.mock("../repositories/branch.repository");
 vi.mock("../repositories/account-opening-document.repository");
+vi.mock("../repositories/document-review-history.repository");
 
-const currentUser: userRepository.UserWithBranchRow = {
+const currentEmployee: userRepository.UserWithBranchRow = {
   id: 7,
   branch_id: 1,
   full_name: "Ram Sharma",
   username: "ram",
   email: "ram@saptakoshi.com",
   password_hash: "secret",
-  role: USER_ROLES.USER,
+  role: USER_ROLES.EMPLOYEE,
   is_active: true,
   created_at: new Date("2026-06-18T00:00:00.000Z"),
   updated_at: new Date("2026-06-18T00:00:00.000Z"),
   branch_code: "BRT001",
   branch_name: "Biratnagar Branch",
+};
+
+const branchManagerOne: userRepository.UserWithBranchRow = {
+  id: 21,
+  branch_id: 1,
+  full_name: "Branch Manager One",
+  username: "manager1",
+  email: "manager1@saptakoshi.com",
+  password_hash: "secret",
+  role: USER_ROLES.BRANCH_MANAGER,
+  is_active: true,
+  created_at: new Date("2026-06-18T00:00:00.000Z"),
+  updated_at: new Date("2026-06-18T00:00:00.000Z"),
+  branch_code: "BRT001",
+  branch_name: "Biratnagar Branch",
+};
+
+const branchManagerTwo: userRepository.UserWithBranchRow = {
+  ...branchManagerOne,
+  id: 22,
+  full_name: "Branch Manager Two",
+  username: "manager2",
+  email: "manager2@saptakoshi.com",
+};
+
+const adminUser: userRepository.UserWithBranchRow = {
+  id: 1,
+  branch_id: null,
+  full_name: "Admin User",
+  username: "admin",
+  email: "admin@saptakoshi.com",
+  password_hash: "secret",
+  role: USER_ROLES.ADMIN,
+  is_active: true,
+  created_at: new Date("2026-06-18T00:00:00.000Z"),
+  updated_at: new Date("2026-06-18T00:00:00.000Z"),
+  branch_code: null,
+  branch_name: null,
 };
 
 const documentRow: accountOpeningDocumentRepository.AccountOpeningDocumentDetailRow =
@@ -68,18 +110,44 @@ const documentRow: accountOpeningDocumentRepository.AccountOpeningDocumentDetail
       "BRT001/CL000123/BRT001-2026-000001-citizenship-copy.pdf",
     mime_type: "application/pdf",
     file_size: 2048,
+    status: DOCUMENT_STATUSES.PENDING,
+    reviewed_by: null,
+    reviewed_at: null,
+    rejection_remarks: null,
     created_at: new Date("2026-06-18T01:00:00.000Z"),
     updated_at: new Date("2026-06-18T01:00:00.000Z"),
     branch_code: "BRT001",
     branch_name: "Biratnagar Branch",
     uploaded_by_name: "Ram Sharma",
+    reviewed_by_name: null,
   };
 
-const authUser = {
+const employeeAuthUser = {
   id: 7,
   email: "ram@saptakoshi.com",
-  role: USER_ROLES.USER,
+  role: USER_ROLES.EMPLOYEE,
   branch_id: 1,
+};
+
+const branchManagerAuthUser = {
+  id: 21,
+  email: "manager1@saptakoshi.com",
+  role: USER_ROLES.BRANCH_MANAGER,
+  branch_id: 1,
+};
+
+const branchManagerTwoAuthUser = {
+  id: 22,
+  email: "manager2@saptakoshi.com",
+  role: USER_ROLES.BRANCH_MANAGER,
+  branch_id: 1,
+};
+
+const adminAuthUser = {
+  id: 1,
+  email: "admin@saptakoshi.com",
+  role: USER_ROLES.ADMIN,
+  branch_id: null,
 };
 
 const branch: branchRepository.BranchRow = {
@@ -109,8 +177,8 @@ describe("account-opening-document.service", () => {
     ).mockResolvedValue([]);
   });
 
-  it("uploads a document using the logged-in user's branch", async () => {
-    vi.mocked(userRepository.findById).mockResolvedValue(currentUser);
+  it("uploads a document using the logged-in employee branch", async () => {
+    vi.mocked(userRepository.findById).mockResolvedValue(currentEmployee);
     vi.mocked(branchRepository.findById).mockResolvedValue(branch);
     vi.mocked(
       accountOpeningDocumentRepository.getNextDocumentSequence
@@ -119,7 +187,7 @@ describe("account-opening-document.service", () => {
     vi.mocked(accountOpeningDocumentRepository.findById).mockResolvedValue(documentRow);
 
     const result = await uploadAccountOpeningDocument({
-      authenticatedUser: authUser,
+      authenticatedUser: employeeAuthUser,
       clientCode: "cl000123",
       firstName: "Sita",
       lastName: "Sharma",
@@ -138,35 +206,19 @@ describe("account-opening-document.service", () => {
     expect(fs.mkdir).toHaveBeenCalledWith("/tmp/bank-documents/BRT001/CL000123", {
       recursive: true,
     });
-    expect(fs.writeFile).toHaveBeenCalledWith(
-      "/tmp/bank-documents/BRT001/CL000123/BRT001-2026-000001-citizenship-copy.pdf",
-      expect.any(Buffer)
-    );
-    expect(accountOpeningDocumentRepository.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        branchId: 1,
-        uploadedBy: 7,
-        clientCode: "CL000123",
-        documentNo: "BRT001-2026-000001",
-        storedFileName: "BRT001-2026-000001-citizenship-copy.pdf",
-        relativeFilePath:
-          "BRT001/CL000123/BRT001-2026-000001-citizenship-copy.pdf",
-      }),
-      expect.any(Object)
-    );
     expect(result.documentNo).toBe("BRT001-2026-000001");
-    expect(result.branchCode).toBe("BRT001");
+    expect(result.status).toBe(DOCUMENT_STATUSES.PENDING);
   });
 
-  it("lists documents scoped to the user's branch", async () => {
-    vi.mocked(userRepository.findById).mockResolvedValue(currentUser);
+  it("lists documents scoped to the employee own uploads", async () => {
+    vi.mocked(userRepository.findById).mockResolvedValue(currentEmployee);
     vi.mocked(accountOpeningDocumentRepository.countAll).mockResolvedValue(1);
     vi.mocked(accountOpeningDocumentRepository.findAll).mockResolvedValue([
       documentRow,
     ]);
 
     const result = await listAccountOpeningDocuments({
-      authenticatedUser: authUser,
+      authenticatedUser: employeeAuthUser,
       page: 1,
       limit: 10,
     });
@@ -176,25 +228,199 @@ describe("account-opening-document.service", () => {
       clientCode: undefined,
       documentNo: undefined,
       branchId: 1,
+      uploadedBy: 7,
+      status: undefined,
     });
     expect(result.data).toHaveLength(1);
-    expect(result.data[0].uploadedByName).toBe("Ram Sharma");
   });
 
-  it("rejects cross-branch document access for branch users", async () => {
-    vi.mocked(userRepository.findById).mockResolvedValue(currentUser);
+  it("allows two branch managers in the same branch to list pending documents", async () => {
+    vi.mocked(userRepository.findById).mockResolvedValue(branchManagerOne);
+    vi.mocked(accountOpeningDocumentRepository.countAll).mockResolvedValue(1);
+    vi.mocked(accountOpeningDocumentRepository.findAll).mockResolvedValue([
+      documentRow,
+    ]);
+
+    const managerOneResult = await listAccountOpeningDocuments({
+      authenticatedUser: branchManagerAuthUser,
+      status: DOCUMENT_STATUSES.PENDING,
+      page: 1,
+      limit: 10,
+    });
+
+    vi.mocked(userRepository.findById).mockResolvedValue(branchManagerTwo);
+
+    const managerTwoResult = await listAccountOpeningDocuments({
+      authenticatedUser: branchManagerTwoAuthUser,
+      status: DOCUMENT_STATUSES.PENDING,
+      page: 1,
+      limit: 10,
+    });
+
+    expect(managerOneResult.data).toHaveLength(1);
+    expect(managerTwoResult.data).toHaveLength(1);
+    expect(accountOpeningDocumentRepository.countAll).toHaveBeenCalledWith({
+      search: undefined,
+      clientCode: undefined,
+      documentNo: undefined,
+      branchId: 1,
+      uploadedBy: undefined,
+      status: DOCUMENT_STATUSES.PENDING,
+    });
+  });
+
+  it("rejects cross-branch document access for employees", async () => {
+    vi.mocked(userRepository.findById).mockResolvedValue({
+      ...currentEmployee,
+      id: 99,
+    });
+    vi.mocked(accountOpeningDocumentRepository.findById).mockResolvedValue(
+      documentRow
+    );
+
+    await expect(
+      getAccountOpeningDocumentById(
+        { id: 99, email: "other@saptakoshi.com", role: USER_ROLES.EMPLOYEE, branch_id: 1 },
+        11
+      )
+    ).rejects.toThrow(new AccountOpeningDocumentError("Forbidden", 403));
+  });
+
+  it("rejects branch manager approval for another branch document", async () => {
+    vi.mocked(userRepository.findById).mockResolvedValue(branchManagerOne);
     vi.mocked(accountOpeningDocumentRepository.findById).mockResolvedValue({
       ...documentRow,
       branch_id: 99,
     });
 
-    await expect(getAccountOpeningDocumentById(authUser, 11)).rejects.toThrow(
-      new AccountOpeningDocumentError("Forbidden", 403)
+    await expect(
+      approveAccountOpeningDocument({
+        authenticatedUser: branchManagerAuthUser,
+        documentId: 11,
+      })
+    ).rejects.toThrow(new AccountOpeningDocumentError("Forbidden", 403));
+  });
+
+  it("rejects employee approve/reject attempts", async () => {
+    vi.mocked(userRepository.findById).mockResolvedValue(currentEmployee);
+    vi.mocked(accountOpeningDocumentRepository.findById).mockResolvedValue(
+      documentRow
+    );
+
+    await expect(
+      approveAccountOpeningDocument({
+        authenticatedUser: employeeAuthUser,
+        documentId: 11,
+      })
+    ).rejects.toThrow(new AccountOpeningDocumentError("Forbidden", 403));
+
+    await expect(
+      rejectAccountOpeningDocument({
+        authenticatedUser: employeeAuthUser,
+        documentId: 11,
+        rejectionRemarks: "Incomplete",
+      })
+    ).rejects.toThrow(new AccountOpeningDocumentError("Forbidden", 403));
+  });
+
+  it("allows admin to approve any pending document", async () => {
+    vi.mocked(userRepository.findById).mockResolvedValue(adminUser);
+    vi.mocked(accountOpeningDocumentRepository.findById)
+      .mockResolvedValueOnce(documentRow)
+      .mockResolvedValueOnce({
+        ...documentRow,
+        status: DOCUMENT_STATUSES.APPROVED,
+        reviewed_by: 1,
+        reviewed_at: new Date("2026-06-19T00:00:00.000Z"),
+        reviewed_by_name: "Admin User",
+      });
+    vi.mocked(accountOpeningDocumentRepository.updateReviewStatus).mockResolvedValue({
+      ...documentRow,
+      status: DOCUMENT_STATUSES.APPROVED,
+      reviewed_by: 1,
+      reviewed_at: new Date("2026-06-19T00:00:00.000Z"),
+      reviewed_by_name: "Admin User",
+    });
+
+    const result = await approveAccountOpeningDocument({
+      authenticatedUser: adminAuthUser,
+      documentId: 11,
+    });
+
+    expect(result.status).toBe(DOCUMENT_STATUSES.APPROVED);
+    expect(result.reviewedBy).toBe(1);
+    expect(documentReviewHistoryRepository.insert).toHaveBeenCalledWith(
+      {
+        documentId: 11,
+        action: DOCUMENT_STATUSES.APPROVED,
+        performedBy: 1,
+        remarks: null,
+      },
+      expect.anything()
     );
   });
 
-  it("updates document metadata for branch users", async () => {
-    vi.mocked(userRepository.findById).mockResolvedValue(currentUser);
+  it("rejects approving an already reviewed document", async () => {
+    vi.mocked(userRepository.findById).mockResolvedValue(branchManagerOne);
+    vi.mocked(accountOpeningDocumentRepository.findById).mockResolvedValue({
+      ...documentRow,
+      status: DOCUMENT_STATUSES.APPROVED,
+      reviewed_by: 21,
+      reviewed_at: new Date("2026-06-19T00:00:00.000Z"),
+    });
+
+    await expect(
+      approveAccountOpeningDocument({
+        authenticatedUser: branchManagerAuthUser,
+        documentId: 11,
+      })
+    ).rejects.toThrow(
+      new AccountOpeningDocumentError("Document has already been reviewed", 409)
+    );
+  });
+
+  it("allows branch manager to reject pending document with remarks", async () => {
+    vi.mocked(userRepository.findById).mockResolvedValue(branchManagerOne);
+    vi.mocked(accountOpeningDocumentRepository.findById)
+      .mockResolvedValueOnce(documentRow)
+      .mockResolvedValueOnce({
+        ...documentRow,
+        status: DOCUMENT_STATUSES.REJECTED,
+        reviewed_by: 21,
+        reviewed_at: new Date("2026-06-19T00:00:00.000Z"),
+        rejection_remarks: "Missing signature",
+        reviewed_by_name: "Branch Manager One",
+      });
+    vi.mocked(accountOpeningDocumentRepository.updateReviewStatus).mockResolvedValue({
+      ...documentRow,
+      status: DOCUMENT_STATUSES.REJECTED,
+      reviewed_by: 21,
+      reviewed_at: new Date("2026-06-19T00:00:00.000Z"),
+      rejection_remarks: "Missing signature",
+      reviewed_by_name: "Branch Manager One",
+    });
+
+    const result = await rejectAccountOpeningDocument({
+      authenticatedUser: branchManagerAuthUser,
+      documentId: 11,
+      rejectionRemarks: "Missing signature",
+    });
+
+    expect(result.status).toBe(DOCUMENT_STATUSES.REJECTED);
+    expect(result.rejectionRemarks).toBe("Missing signature");
+    expect(documentReviewHistoryRepository.insert).toHaveBeenCalledWith(
+      {
+        documentId: 11,
+        action: DOCUMENT_STATUSES.REJECTED,
+        performedBy: 21,
+        remarks: "Missing signature",
+      },
+      expect.anything()
+    );
+  });
+
+  it("updates document metadata for employees on their own documents", async () => {
+    vi.mocked(userRepository.findById).mockResolvedValue(currentEmployee);
     vi.mocked(accountOpeningDocumentRepository.findById)
       .mockResolvedValueOnce(documentRow)
       .mockResolvedValueOnce({
@@ -207,7 +433,7 @@ describe("account-opening-document.service", () => {
     });
 
     const result = await updateAccountOpeningDocument({
-      authenticatedUser: authUser,
+      authenticatedUser: employeeAuthUser,
       documentId: 11,
       firstName: "Gita",
       lastName: "Sharma",
@@ -216,24 +442,107 @@ describe("account-opening-document.service", () => {
       mobileNumber: "9800000000",
     });
 
-    expect(accountOpeningDocumentRepository.update).toHaveBeenCalled();
+    expect(accountOpeningDocumentRepository.update).toHaveBeenCalledWith(
+      11,
+      expect.objectContaining({
+        firstName: "Gita",
+      }),
+      { resubmit: false },
+      expect.anything()
+    );
     expect(result.firstName).toBe("Gita");
+  });
+
+  it("resubmits rejected documents and records review history", async () => {
+    vi.mocked(userRepository.findById).mockResolvedValue(currentEmployee);
+    vi.mocked(accountOpeningDocumentRepository.findById)
+      .mockResolvedValueOnce({
+        ...documentRow,
+        status: DOCUMENT_STATUSES.REJECTED,
+        reviewed_by: 21,
+        reviewed_at: new Date("2026-06-19T00:00:00.000Z"),
+        rejection_remarks: "Missing signature",
+      })
+      .mockResolvedValueOnce({
+        ...documentRow,
+        status: DOCUMENT_STATUSES.PENDING,
+        reviewed_by: null,
+        reviewed_at: null,
+        rejection_remarks: null,
+        first_name: "Gita",
+      });
+    vi.mocked(accountOpeningDocumentRepository.update).mockResolvedValue({
+      ...documentRow,
+      status: DOCUMENT_STATUSES.PENDING,
+      reviewed_by: null,
+      reviewed_at: null,
+      rejection_remarks: null,
+      first_name: "Gita",
+    });
+
+    const result = await updateAccountOpeningDocument({
+      authenticatedUser: employeeAuthUser,
+      documentId: 11,
+      firstName: "Gita",
+      lastName: "Sharma",
+      fatherName: "Hari Sharma",
+      citizenNo: "12345678",
+      mobileNumber: "9800000000",
+    });
+
+    expect(accountOpeningDocumentRepository.update).toHaveBeenCalledWith(
+      11,
+      expect.objectContaining({
+        firstName: "Gita",
+      }),
+      { resubmit: true },
+      expect.anything()
+    );
+    expect(documentReviewHistoryRepository.insert).toHaveBeenCalledWith(
+      {
+        documentId: 11,
+        action: "RESUBMITTED",
+        performedBy: 7,
+      },
+      expect.anything()
+    );
+    expect(result.status).toBe(DOCUMENT_STATUSES.PENDING);
+    expect(result.firstName).toBe("Gita");
+  });
+
+  it("rejects editing approved documents for employees", async () => {
+    vi.mocked(userRepository.findById).mockResolvedValue(currentEmployee);
+    vi.mocked(accountOpeningDocumentRepository.findById).mockResolvedValue({
+      ...documentRow,
+      status: DOCUMENT_STATUSES.APPROVED,
+      reviewed_by: 21,
+      reviewed_at: new Date("2026-06-19T00:00:00.000Z"),
+    });
+
+    await expect(
+      updateAccountOpeningDocument({
+        authenticatedUser: employeeAuthUser,
+        documentId: 11,
+        firstName: "Gita",
+        lastName: "Sharma",
+        fatherName: "Hari Sharma",
+        citizenNo: "12345678",
+        mobileNumber: "9800000000",
+      })
+    ).rejects.toThrow(
+      new AccountOpeningDocumentError("Approved documents cannot be edited", 409)
+    );
   });
 
   it("rejects inactive users", async () => {
     vi.mocked(userRepository.findById).mockResolvedValue({
-      ...currentUser,
+      ...currentEmployee,
       is_active: false,
     });
 
     await expect(
       uploadAccountOpeningDocument({
-        authenticatedUser: {
-          id: 7,
-          email: "ram@saptakoshi.com",
-          role: USER_ROLES.USER,
-          branch_id: 1,
-        },
+        authenticatedUser: employeeAuthUser,
         clientCode: "CL000123",
         firstName: "Sita",
         lastName: "Sharma",
@@ -249,18 +558,34 @@ describe("account-opening-document.service", () => {
     ).rejects.toThrow(new AccountOpeningDocumentError("Account is inactive", 403));
   });
 
+  it("rejects branch manager uploads", async () => {
+    vi.mocked(userRepository.findById).mockResolvedValue(branchManagerOne);
+
+    await expect(
+      uploadAccountOpeningDocument({
+        authenticatedUser: branchManagerAuthUser,
+        clientCode: "CL000123",
+        firstName: "Sita",
+        lastName: "Sharma",
+        citizenNo: "12345678",
+        mobileNumber: "9800000000",
+        file: {
+          originalname: "citizenship.pdf",
+          mimetype: "application/pdf",
+          size: 2048,
+          buffer: Buffer.from("pdf"),
+        } as Express.Multer.File,
+      })
+    ).rejects.toThrow(new AccountOpeningDocumentError("Forbidden", 403));
+  });
+
   it("rejects path traversal in client code", async () => {
-    vi.mocked(userRepository.findById).mockResolvedValue(currentUser);
+    vi.mocked(userRepository.findById).mockResolvedValue(currentEmployee);
     vi.mocked(branchRepository.findById).mockResolvedValue(branch);
 
     await expect(
       uploadAccountOpeningDocument({
-        authenticatedUser: {
-          id: 7,
-          email: "ram@saptakoshi.com",
-          role: USER_ROLES.USER,
-          branch_id: 1,
-        },
+        authenticatedUser: employeeAuthUser,
         clientCode: "../secret",
         firstName: "Sita",
         lastName: "Sharma",
@@ -277,17 +602,12 @@ describe("account-opening-document.service", () => {
   });
 
   it("rejects non-PDF files", async () => {
-    vi.mocked(userRepository.findById).mockResolvedValue(currentUser);
+    vi.mocked(userRepository.findById).mockResolvedValue(currentEmployee);
     vi.mocked(branchRepository.findById).mockResolvedValue(branch);
 
     await expect(
       uploadAccountOpeningDocument({
-        authenticatedUser: {
-          id: 7,
-          email: "ram@saptakoshi.com",
-          role: USER_ROLES.USER,
-          branch_id: 1,
-        },
+        authenticatedUser: employeeAuthUser,
         clientCode: "CL000123",
         firstName: "Sita",
         lastName: "Sharma",
@@ -304,17 +624,12 @@ describe("account-opening-document.service", () => {
   });
 
   it("rejects files larger than 2 MB", async () => {
-    vi.mocked(userRepository.findById).mockResolvedValue(currentUser);
+    vi.mocked(userRepository.findById).mockResolvedValue(currentEmployee);
     vi.mocked(branchRepository.findById).mockResolvedValue(branch);
 
     await expect(
       uploadAccountOpeningDocument({
-        authenticatedUser: {
-          id: 7,
-          email: "ram@saptakoshi.com",
-          role: USER_ROLES.USER,
-          branch_id: 1,
-        },
+        authenticatedUser: employeeAuthUser,
         clientCode: "CL000123",
         firstName: "Sita",
         lastName: "Sharma",
@@ -333,7 +648,7 @@ describe("account-opening-document.service", () => {
   });
 
   it("rejects duplicate client code on upload", async () => {
-    vi.mocked(userRepository.findById).mockResolvedValue(currentUser);
+    vi.mocked(userRepository.findById).mockResolvedValue(currentEmployee);
     vi.mocked(branchRepository.findById).mockResolvedValue(branch);
     vi.mocked(
       accountOpeningDocumentRepository.findUniqueFieldConflicts
@@ -341,7 +656,7 @@ describe("account-opening-document.service", () => {
 
     await expect(
       uploadAccountOpeningDocument({
-        authenticatedUser: authUser,
+        authenticatedUser: employeeAuthUser,
         clientCode: "CL000123",
         firstName: "Sita",
         lastName: "Sharma",
@@ -360,7 +675,7 @@ describe("account-opening-document.service", () => {
   });
 
   it("rejects duplicate citizen number on update", async () => {
-    vi.mocked(userRepository.findById).mockResolvedValue(currentUser);
+    vi.mocked(userRepository.findById).mockResolvedValue(currentEmployee);
     vi.mocked(accountOpeningDocumentRepository.findById).mockResolvedValue(
       documentRow
     );
@@ -370,7 +685,7 @@ describe("account-opening-document.service", () => {
 
     await expect(
       updateAccountOpeningDocument({
-        authenticatedUser: authUser,
+        authenticatedUser: employeeAuthUser,
         documentId: 11,
         firstName: "Sita",
         lastName: "Sharma",

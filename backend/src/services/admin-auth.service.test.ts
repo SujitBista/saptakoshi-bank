@@ -16,7 +16,7 @@ const mockUser: userRepository.UserWithBranchRow = {
   username: "ram",
   email: "ram@saptakoshi.com",
   password_hash: "hashed-password",
-  role: USER_ROLES.USER,
+  role: USER_ROLES.EMPLOYEE,
   is_active: true,
   created_at: new Date(),
   updated_at: new Date(),
@@ -43,7 +43,7 @@ describe("admin-auth.service login", () => {
         fullName: "Ram Sharma",
         username: "ram",
         email: "ram@saptakoshi.com",
-        role: USER_ROLES.USER,
+        role: USER_ROLES.EMPLOYEE,
         branchId: 1,
         branchCode: "BRT001",
         branchName: "Biratnagar Main Branch",
@@ -52,7 +52,7 @@ describe("admin-auth.service login", () => {
     expect(jwt.signToken).toHaveBeenCalledWith({
       sub: 1,
       email: "ram@saptakoshi.com",
-      role: USER_ROLES.USER,
+      role: USER_ROLES.EMPLOYEE,
       branchId: 1,
     });
   });

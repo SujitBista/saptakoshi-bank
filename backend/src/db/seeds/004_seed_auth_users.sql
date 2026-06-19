@@ -4,7 +4,7 @@ VALUES (
   'ram',
   'ram@saptakoshi.com',
   '$2b$10$dNrq3jyfwkzQrjTC.Xijyu8WzuLMnhiYa/NTsl9xKtWjpjLHFEWey',
-  'USER',
+  'EMPLOYEE',
   (SELECT id FROM branches WHERE branch_code = 'BRT001'),
   true
 )
@@ -22,9 +22,45 @@ VALUES (
   'inactive',
   'inactive@saptakoshi.com',
   '$2b$10$dNrq3jyfwkzQrjTC.Xijyu8WzuLMnhiYa/NTsl9xKtWjpjLHFEWey',
-  'USER',
+  'EMPLOYEE',
   (SELECT id FROM branches WHERE branch_code = 'BRT001'),
   false
+)
+ON CONFLICT (email) DO UPDATE SET
+  full_name = EXCLUDED.full_name,
+  username = EXCLUDED.username,
+  password_hash = EXCLUDED.password_hash,
+  role = EXCLUDED.role,
+  branch_id = EXCLUDED.branch_id,
+  is_active = EXCLUDED.is_active;
+
+INSERT INTO users (full_name, username, email, password_hash, role, branch_id, is_active)
+VALUES (
+  'Branch Manager One',
+  'manager1',
+  'manager1@saptakoshi.com',
+  '$2b$10$dNrq3jyfwkzQrjTC.Xijyu8WzuLMnhiYa/NTsl9xKtWjpjLHFEWey',
+  'BRANCH_MANAGER',
+  (SELECT id FROM branches WHERE branch_code = 'BRT001'),
+  true
+)
+ON CONFLICT (email) DO UPDATE SET
+  full_name = EXCLUDED.full_name,
+  username = EXCLUDED.username,
+  password_hash = EXCLUDED.password_hash,
+  role = EXCLUDED.role,
+  branch_id = EXCLUDED.branch_id,
+  is_active = EXCLUDED.is_active;
+
+INSERT INTO users (full_name, username, email, password_hash, role, branch_id, is_active)
+VALUES (
+  'Branch Manager Two',
+  'manager2',
+  'manager2@saptakoshi.com',
+  '$2b$10$dNrq3jyfwkzQrjTC.Xijyu8WzuLMnhiYa/NTsl9xKtWjpjLHFEWey',
+  'BRANCH_MANAGER',
+  (SELECT id FROM branches WHERE branch_code = 'BRT001'),
+  true
 )
 ON CONFLICT (email) DO UPDATE SET
   full_name = EXCLUDED.full_name,

@@ -6,10 +6,10 @@ import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { AccountOpeningDocumentList } from "@/features/account-opening/AccountOpeningDocumentList";
 import { uploadAccountOpeningDocument } from "@/features/account-opening/api";
 import { AccountOpeningUploadForm } from "@/features/account-opening/AccountOpeningUploadForm";
-import { useUserAuth } from "@/hooks/useUserAuth";
+import { useEmployeeAuth } from "@/hooks/useUserAuth";
 
 export function AccountOpeningUploadContent() {
-  const { user, isReady, handleLogout } = useUserAuth();
+  const { user, isReady, handleLogout } = useEmployeeAuth();
   const [listRefreshKey, setListRefreshKey] = useState(0);
 
   if (!isReady || !user) {

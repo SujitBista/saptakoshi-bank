@@ -3,10 +3,12 @@ import {
   AccountOpeningDocumentError,
   DEFAULT_ACCOUNT_OPENING_PAGE,
   DEFAULT_ACCOUNT_OPENING_PAGE_SIZE,
+  approveAccountOpeningDocument,
   getAccountOpeningDocumentById,
   getAccountOpeningDocumentFile,
   listAccountOpeningDocuments,
   MAX_ACCOUNT_OPENING_PAGE_SIZE,
+  rejectAccountOpeningDocument,
   updateAccountOpeningDocument,
   uploadAccountOpeningDocument,
 } from "../services/account-opening-document.service";
@@ -75,6 +77,7 @@ export async function getAccountOpeningDocuments(
       documentNo:
         typeof req.query.document_no === "string" ? req.query.document_no : undefined,
       branchId: parseOptionalPositiveInt(req.query.branch_id),
+      status: typeof req.query.status === "string" ? req.query.status : undefined,
       page: parsePositiveInt(req.query.page, DEFAULT_ACCOUNT_OPENING_PAGE),
       limit: parsePositiveInt(
         req.query.limit,
@@ -232,6 +235,72 @@ export async function postAccountOpeningDocument(
       error,
       res,
       "Account opening document upload failed"
+    );
+  }
+}
+
+export async function postApproveAccountOpeningDocument(
+  req: Request,
+  res: Response
+): Promise<void> {
+  if (!req.user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const documentId = Number(req.params.id);
+  if (!Number.isInteger(documentId) || documentId <= 0) {
+    res.status(400).json({ error: "Invalid document id" });
+    return;
+  }
+
+  try {
+    const document = await approveAccountOpeningDocument({
+      authenticatedUser: req.user,
+      documentId,
+    });
+
+    res.json({ document });
+  } catch (error) {
+    handleAccountOpeningDocumentError(
+      error,
+      res,
+      "Unable to approve account opening document"
+    );
+  }
+}
+
+export async function postRejectAccountOpeningDocument(
+  req: Request,
+  res: Response
+): Promise<void> {
+  if (!req.user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const documentId = Number(req.params.id);
+  if (!Number.isInteger(documentId) || documentId <= 0) {
+    res.status(400).json({ error: "Invalid document id" });
+    return;
+  }
+
+  try {
+    const document = await rejectAccountOpeningDocument({
+      authenticatedUser: req.user,
+      documentId,
+      rejectionRemarks:
+        typeof req.body.rejection_remarks === "string"
+          ? req.body.rejection_remarks
+          : undefined,
+    });
+
+    res.json({ document });
+  } catch (error) {
+    handleAccountOpeningDocumentError(
+      error,
+      res,
+      "Unable to reject account opening document"
     );
   }
 }
