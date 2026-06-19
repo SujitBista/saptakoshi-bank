@@ -339,7 +339,10 @@ function assertDocumentAccess(
 
   if (currentUser.role === USER_ROLES.BRANCH_MANAGER) {
     if (!currentUser.branch_id || document.branch_id !== currentUser.branch_id) {
-      throw new AccountOpeningDocumentError("Forbidden", 403);
+      throw new AccountOpeningDocumentError(
+        "Document is not in your assigned branch",
+        403
+      );
     }
 
     return;
@@ -361,7 +364,10 @@ function assertCanReviewDocument(
 
   if (currentUser.role === USER_ROLES.BRANCH_MANAGER) {
     if (!currentUser.branch_id || document.branch_id !== currentUser.branch_id) {
-      throw new AccountOpeningDocumentError("Forbidden", 403);
+      throw new AccountOpeningDocumentError(
+        "Document is not in your assigned branch",
+        403
+      );
     }
   }
 }

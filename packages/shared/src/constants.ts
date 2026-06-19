@@ -10,6 +10,16 @@ export const USER_ROLES = {
 
 export type UserRole = (typeof USER_ROLES)[keyof typeof USER_ROLES];
 
+const LEGACY_USER_ROLE = "USER";
+
+export function normalizeUserRole(role: string): UserRole {
+  if (role === LEGACY_USER_ROLE) {
+    return USER_ROLES.EMPLOYEE;
+  }
+
+  return role as UserRole;
+}
+
 export const DOCUMENT_STATUSES = {
   PENDING: "PENDING",
   APPROVED: "APPROVED",

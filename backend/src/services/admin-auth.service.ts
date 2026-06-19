@@ -1,3 +1,4 @@
+import { USER_ROLES } from "@saptakoshi/shared";
 import { comparePassword } from "../auth/password";
 import { signToken } from "../auth/jwt";
 import * as userRepository from "../repositories/user.repository";
@@ -40,6 +41,16 @@ export async function login(
   const passwordMatches = await comparePassword(password, user.password_hash);
   if (!passwordMatches) {
     throw new AuthError("Invalid credentials");
+  }
+
+  if (
+    (user.role === USER_ROLES.EMPLOYEE ||
+      user.role === USER_ROLES.BRANCH_MANAGER) &&
+    !user.branch_id
+  ) {
+    throw new AuthError(
+      "Account is missing a branch assignment. Contact an administrator."
+    );
   }
 
   const token = signToken({

@@ -57,6 +57,30 @@ export async function fetchBranches(
   };
 }
 
+export async function fetchAllBranches(): Promise<Branch[]> {
+  const pageSize = 100;
+  const firstPage = await fetchBranches({ page: 1, limit: pageSize });
+  const branches = [...firstPage.branches];
+
+  if (firstPage.pagination.totalPages <= 1) {
+    return branches;
+  }
+
+  const remainingPages = await Promise.all(
+    Array.from({ length: firstPage.pagination.totalPages - 1 }, (_, index) =>
+      fetchBranches({ page: index + 2, limit: pageSize }).then(
+        (response) => response.branches
+      )
+    )
+  );
+
+  for (const pageBranches of remainingPages) {
+    branches.push(...pageBranches);
+  }
+
+  return branches;
+}
+
 export async function fetchBranchById(id: number): Promise<Branch> {
   const response = await apiClient<BranchResponse>(`/api/admin/branches/${id}`, {
     token: getToken(),

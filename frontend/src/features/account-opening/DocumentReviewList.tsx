@@ -178,9 +178,14 @@ export function DocumentReviewList({
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-blue-25 border-t-brand-blue" />
           </div>
         ) : documents.length === 0 ? (
-          <p className="py-8 text-center text-sm text-brand-black-50">
-            No pending documents found.
-          </p>
+          <div className="rounded-lg border border-brand-blue-15 bg-brand-blue-05 px-4 py-6 text-center text-sm text-brand-black-75">
+            <p>No pending documents found for branch {branchCode ?? "—"}.</p>
+            <p className="mt-2">
+              Only pending submissions uploaded to your assigned branch appear here.
+              Ask an administrator to confirm your branch assignment if you expected
+              documents from another branch.
+            </p>
+          </div>
         ) : (
           <Table>
             <TableHead>

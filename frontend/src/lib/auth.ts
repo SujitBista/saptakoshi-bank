@@ -1,4 +1,5 @@
 import type { AuthUser } from "@saptakoshi/shared";
+import { USER_ROLES, normalizeUserRole } from "@saptakoshi/shared";
 
 const TOKEN_KEY = "saptakoshi_token";
 const USER_KEY = "saptakoshi_user";
@@ -46,7 +47,10 @@ export function isAuthenticated(): boolean {
 
 export function saveUser(user: AuthUser): void {
   if (typeof window === "undefined") return;
-  localStorage.setItem(USER_KEY, JSON.stringify(user));
+  localStorage.setItem(
+    USER_KEY,
+    JSON.stringify({ ...user, role: normalizeUserRole(user.role) })
+  );
 }
 
 export function getUser(): AuthUser | null {
@@ -57,14 +61,25 @@ export function getUser(): AuthUser | null {
   if (!raw) return null;
 
   try {
-    return JSON.parse(raw) as AuthUser;
+    const user = JSON.parse(raw) as AuthUser;
+    return { ...user, role: normalizeUserRole(user.role) };
   } catch {
     return null;
   }
 }
 
 export function getDashboardPathForRole(role: string): string {
-  return role === "ADMIN" ? "/admin/dashboard" : "/dashboard";
+  const normalizedRole = normalizeUserRole(role);
+
+  if (normalizedRole === USER_ROLES.ADMIN) {
+    return "/admin/dashboard";
+  }
+
+  if (normalizedRole === USER_ROLES.BRANCH_MANAGER) {
+    return "/dashboard/document-review";
+  }
+
+  return "/dashboard";
 }
 
 export function getLoginPathForRole(role: string): string {

@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
-import { USER_ROLES } from "@saptakoshi/shared";
+import { USER_ROLES, normalizeUserRole } from "@saptakoshi/shared";
 import { verifyToken } from "../auth/jwt";
 
 export interface AuthenticatedUser {
@@ -32,7 +32,7 @@ export function requireAuth(
     req.user = {
       id: payload.sub,
       email: payload.email,
-      role: payload.role,
+      role: normalizeUserRole(payload.role),
       branch_id: payload.branchId,
     };
     next();

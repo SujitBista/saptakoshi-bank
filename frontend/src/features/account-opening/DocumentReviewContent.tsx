@@ -31,8 +31,18 @@ export function DocumentReviewContent() {
 
         <DocumentReviewList
           branchCode={user.branchCode ?? undefined}
-          enabled={isReady}
+          enabled={isReady && Boolean(user.branchCode)}
         />
+
+        {!user.branchCode ? (
+          <div
+            className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+            role="alert"
+          >
+            Your account is not linked to a branch. Contact an administrator to assign
+            a branch before you can review documents.
+          </div>
+        ) : null}
       </div>
     </UserLayout>
   );

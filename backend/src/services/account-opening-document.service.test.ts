@@ -298,7 +298,9 @@ describe("account-opening-document.service", () => {
         authenticatedUser: branchManagerAuthUser,
         documentId: 11,
       })
-    ).rejects.toThrow(new AccountOpeningDocumentError("Forbidden", 403));
+    ).rejects.toThrow(
+      new AccountOpeningDocumentError("Document is not in your assigned branch", 403)
+    );
   });
 
   it("rejects employee approve/reject attempts", async () => {
