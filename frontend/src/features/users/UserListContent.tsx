@@ -175,8 +175,8 @@ export function UserListContent() {
     setPage(DEFAULT_USER_PAGE);
   }
 
-  function handlePageSizeChange(value: string) {
-    setPageSize(Number(value));
+  function handlePageSizeChange(value: number) {
+    setPageSize(value);
     setPage(DEFAULT_USER_PAGE);
   }
 
@@ -324,29 +324,7 @@ export function UserListContent() {
                 </p>
               </div>
             ) : (
-              <>
-                <div className="mb-4 flex items-center justify-end gap-2">
-                  <label
-                    htmlFor="user-page-size"
-                    className="text-sm font-medium text-brand-black-75"
-                  >
-                    Page size
-                  </label>
-                  <select
-                    id="user-page-size"
-                    value={String(pageSize)}
-                    onChange={(event) => handlePageSizeChange(event.target.value)}
-                    className="rounded-lg border border-brand-black-15 bg-white px-3 py-2 text-sm text-brand-black shadow-sm transition-colors focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
-                  >
-                    {USER_PAGE_SIZE_OPTIONS.map((size) => (
-                      <option key={size} value={size}>
-                        {size}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <Table>
+              <Table>
                   <TableHead>
                     <TableRow>
                       <TableHeaderCell className={compactTableHeaderClass}>
@@ -430,18 +408,21 @@ export function UserListContent() {
                     ))}
                   </TableBody>
                 </Table>
-
-                <Pagination
-                  className="mt-4"
-                  page={page}
-                  totalPages={totalPages}
-                  total={total}
-                  pageSize={pageSize}
-                  itemLabel="users"
-                  onPageChange={setPage}
-                />
-              </>
             )}
+
+            {!isLoading ? (
+              <Pagination
+                className="mt-4"
+                page={page}
+                totalPages={totalPages}
+                total={total}
+                pageSize={pageSize}
+                itemLabel="users"
+                pageSizeOptions={USER_PAGE_SIZE_OPTIONS}
+                onPageChange={setPage}
+                onPageSizeChange={handlePageSizeChange}
+              />
+            ) : null}
           </CardContent>
         </Card>
       </div>
