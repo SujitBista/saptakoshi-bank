@@ -23,6 +23,7 @@ import { ApiError } from "@/lib/api-client";
 import { fetchUsers, formatUserDate } from "@/features/users/api";
 import { ResetPasswordDialog } from "@/features/users/ResetPasswordDialog";
 import { TransferBranchDialog } from "@/features/users/TransferBranchDialog";
+import { UserRowActions } from "@/features/users/UserRowActions";
 import { UserStatusDialog } from "@/features/users/UserStatusDialog";
 import type { BranchOption, User } from "@/features/users/types";
 import {
@@ -45,6 +46,24 @@ const STATUS_FILTER_OPTIONS = [
   { value: "active", label: "Active" },
   { value: "inactive", label: "Inactive" },
 ];
+
+const ROLE_BADGE_LABELS: Record<string, string> = {
+  ADMIN: "Admin",
+  EMPLOYEE: "Employee",
+  BRANCH_MANAGER: "Branch Mgr",
+};
+
+const ROLE_BADGE_VARIANTS: Record<
+  string,
+  "info" | "neutral" | "warning"
+> = {
+  ADMIN: "warning",
+  EMPLOYEE: "neutral",
+  BRANCH_MANAGER: "info",
+};
+
+const compactTableCellClass = "px-3 py-2 text-sm";
+const compactTableHeaderClass = "px-3 py-2";
 
 export function UserListContent() {
   const { user, isReady, handleLogout } = useAdminAuth();
@@ -330,70 +349,82 @@ export function UserListContent() {
                 <Table>
                   <TableHead>
                     <TableRow>
-                      <TableHeaderCell>Full Name</TableHeaderCell>
-                      <TableHeaderCell>Username</TableHeaderCell>
-                      <TableHeaderCell>Email</TableHeaderCell>
-                      <TableHeaderCell>Branch Code</TableHeaderCell>
-                      <TableHeaderCell>Branch Name</TableHeaderCell>
-                      <TableHeaderCell>Role</TableHeaderCell>
-                      <TableHeaderCell>Status</TableHeaderCell>
-                      <TableHeaderCell>Created Date</TableHeaderCell>
-                      <TableHeaderCell>Actions</TableHeaderCell>
+                      <TableHeaderCell className={compactTableHeaderClass}>
+                        Full Name
+                      </TableHeaderCell>
+                      <TableHeaderCell className={compactTableHeaderClass}>
+                        Username
+                      </TableHeaderCell>
+                      <TableHeaderCell className={compactTableHeaderClass}>
+                        Email
+                      </TableHeaderCell>
+                      <TableHeaderCell className={compactTableHeaderClass}>
+                        Branch Code
+                      </TableHeaderCell>
+                      <TableHeaderCell className={compactTableHeaderClass}>
+                        Branch Name
+                      </TableHeaderCell>
+                      <TableHeaderCell className={compactTableHeaderClass}>
+                        Role
+                      </TableHeaderCell>
+                      <TableHeaderCell className={compactTableHeaderClass}>
+                        Status
+                      </TableHeaderCell>
+                      <TableHeaderCell className={compactTableHeaderClass}>
+                        Created Date
+                      </TableHeaderCell>
+                      <TableHeaderCell className={compactTableHeaderClass}>
+                        Actions
+                      </TableHeaderCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {users.map((item) => (
                       <TableRow key={item.id}>
-                        <TableCell className="font-medium text-brand-blue">
+                        <TableCell
+                          className={`${compactTableCellClass} font-medium text-brand-blue`}
+                        >
                           {item.fullName}
                         </TableCell>
-                        <TableCell>{item.username}</TableCell>
-                        <TableCell>{item.email}</TableCell>
-                        <TableCell>{item.branchCode || "—"}</TableCell>
-                        <TableCell>{item.branchName || "—"}</TableCell>
-                        <TableCell>{item.role}</TableCell>
-                        <TableCell>
-                          <Badge variant={item.isActive ? "success" : "neutral"}>
+                        <TableCell className={compactTableCellClass}>
+                          {item.username}
+                        </TableCell>
+                        <TableCell className={compactTableCellClass}>
+                          {item.email}
+                        </TableCell>
+                        <TableCell className={compactTableCellClass}>
+                          {item.branchCode || "—"}
+                        </TableCell>
+                        <TableCell className={compactTableCellClass}>
+                          {item.branchName || "—"}
+                        </TableCell>
+                        <TableCell className={compactTableCellClass}>
+                          <Badge
+                            size="compact"
+                            variant={ROLE_BADGE_VARIANTS[item.role] ?? "neutral"}
+                          >
+                            {ROLE_BADGE_LABELS[item.role] ?? item.role}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className={compactTableCellClass}>
+                          <Badge
+                            size="compact"
+                            variant={item.isActive ? "success" : "neutral"}
+                          >
                             {item.isActive ? "Active" : "Inactive"}
                           </Badge>
                         </TableCell>
-                        <TableCell>{formatUserDate(item.createdAt)}</TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-2">
-                            <Link href={`/admin/users/${item.id}`}>
-                              <Button variant="outline" className="px-3 py-1.5 text-xs">
-                                View
-                              </Button>
-                            </Link>
-                            <Link href={`/admin/users/${item.id}/edit`}>
-                              <Button variant="outline" className="px-3 py-1.5 text-xs">
-                                Edit
-                              </Button>
-                            </Link>
-                            <Button
-                              variant="outline"
-                              className="px-3 py-1.5 text-xs"
-                              onClick={() => openStatusDialog(item)}
-                            >
-                              {item.isActive ? "Disable" : "Enable"}
-                            </Button>
-                            <Button
-                              variant="outline"
-                              className="px-3 py-1.5 text-xs"
-                              onClick={() => openResetDialog(item)}
-                            >
-                              Reset Password
-                            </Button>
-                            {canTransferUser(item) ? (
-                              <Button
-                                variant="outline"
-                                className="px-3 py-1.5 text-xs"
-                                onClick={() => openTransferDialog(item)}
-                              >
-                                Transfer Branch
-                              </Button>
-                            ) : null}
-                          </div>
+                        <TableCell className={compactTableCellClass}>
+                          {formatUserDate(item.createdAt)}
+                        </TableCell>
+                        <TableCell className={compactTableCellClass}>
+                          <UserRowActions
+                            user={item}
+                            canTransfer={canTransferUser(item)}
+                            onStatusClick={openStatusDialog}
+                            onResetClick={openResetDialog}
+                            onTransferClick={openTransferDialog}
+                          />
                         </TableCell>
                       </TableRow>
                     ))}
