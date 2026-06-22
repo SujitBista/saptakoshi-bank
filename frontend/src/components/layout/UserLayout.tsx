@@ -65,6 +65,7 @@ export function UserLayout({
             variant="light"
             size="sm"
             showTagline
+            hideTaglineOnMobile
             tagline="Trusted Banking Partner"
           />
 
@@ -93,7 +94,10 @@ export function UserLayout({
         </div>
 
         <div className="border-t border-white/10 px-4 py-3 lg:px-6">
-          <nav className="flex flex-wrap gap-2">
+          <nav
+            className="-mx-1 flex gap-2 overflow-x-auto px-1"
+            aria-label="Staff navigation"
+          >
             {navigationItems.map((item) => {
               const pathsToMatch = item.matchPaths ?? [item.href];
               const isActive = pathsToMatch.some(
@@ -105,7 +109,7 @@ export function UserLayout({
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                  className={`shrink-0 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                     isActive
                       ? "bg-white text-brand-blue"
                       : "bg-white/10 text-white hover:bg-white/20"

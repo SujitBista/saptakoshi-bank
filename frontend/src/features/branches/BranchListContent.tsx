@@ -6,6 +6,11 @@ import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
+import {
+  DataListCard,
+  DataListCardField,
+  DataListCards,
+} from "@/components/ui/DataListCard";
 import { Input } from "@/components/ui/Input";
 import { Pagination } from "@/components/ui/Pagination";
 import {
@@ -142,13 +147,13 @@ export function BranchListContent() {
       <div className="mx-auto max-w-6xl">
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-brand-blue">Branches</h1>
+            <h1 className="text-xl font-bold text-brand-blue sm:text-2xl">Branches</h1>
             <p className="mt-1 text-sm text-brand-black-75">
               Manage bank branches across the network
             </p>
           </div>
-          <Link href="/admin/branches/new">
-            <Button>Add Branch</Button>
+          <Link href="/admin/branches/new" className="w-full sm:w-auto">
+            <Button className="w-full sm:w-auto">Add Branch</Button>
           </Link>
         </div>
 
@@ -213,58 +218,104 @@ export function BranchListContent() {
               </div>
             ) : (
               <>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableHeaderCell>Branch Code</TableHeaderCell>
-                      <TableHeaderCell>Branch Name</TableHeaderCell>
-                      <TableHeaderCell>Address</TableHeaderCell>
-                      <TableHeaderCell>Status</TableHeaderCell>
-                      <TableHeaderCell>Created Date</TableHeaderCell>
-                      <TableHeaderCell>Actions</TableHeaderCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {branches.map((branch) => (
-                      <TableRow key={branch.id}>
-                        <TableCell className="font-medium text-brand-blue">
-                          {branch.branchCode}
-                        </TableCell>
-                        <TableCell>{branch.branchName}</TableCell>
-                        <TableCell className="max-w-xs whitespace-normal">
-                          {branch.address || "—"}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={branch.isActive ? "success" : "neutral"}>
-                            {branch.isActive ? "Active" : "Inactive"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{formatBranchDate(branch.createdAt)}</TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-2">
-                            <Link href={`/admin/branches/${branch.id}/edit`}>
-                              <Button variant="outline" className="px-3 py-1.5 text-xs">
-                                Edit
-                              </Button>
-                            </Link>
-                            <Link href={`/admin/branches/${branch.id}`}>
-                              <Button variant="outline" className="px-3 py-1.5 text-xs">
-                                View
-                              </Button>
-                            </Link>
-                            <Button
-                              variant="outline"
-                              className="px-3 py-1.5 text-xs"
-                              onClick={() => openStatusDialog(branch)}
-                            >
-                              {branch.isActive ? "Disable" : "Enable"}
-                            </Button>
-                          </div>
-                        </TableCell>
+                <div className="hidden md:block">
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableHeaderCell>Branch Code</TableHeaderCell>
+                        <TableHeaderCell>Branch Name</TableHeaderCell>
+                        <TableHeaderCell>Address</TableHeaderCell>
+                        <TableHeaderCell>Status</TableHeaderCell>
+                        <TableHeaderCell>Created Date</TableHeaderCell>
+                        <TableHeaderCell>Actions</TableHeaderCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHead>
+                    <TableBody>
+                      {branches.map((branch) => (
+                        <TableRow key={branch.id}>
+                          <TableCell className="font-medium text-brand-blue">
+                            {branch.branchCode}
+                          </TableCell>
+                          <TableCell>{branch.branchName}</TableCell>
+                          <TableCell className="max-w-xs whitespace-normal">
+                            {branch.address || "—"}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={branch.isActive ? "success" : "neutral"}>
+                              {branch.isActive ? "Active" : "Inactive"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{formatBranchDate(branch.createdAt)}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-2">
+                              <Link href={`/admin/branches/${branch.id}/edit`}>
+                                <Button variant="outline" className="px-3 py-1.5 text-xs">
+                                  Edit
+                                </Button>
+                              </Link>
+                              <Link href={`/admin/branches/${branch.id}`}>
+                                <Button variant="outline" className="px-3 py-1.5 text-xs">
+                                  View
+                                </Button>
+                              </Link>
+                              <Button
+                                variant="outline"
+                                className="px-3 py-1.5 text-xs"
+                                onClick={() => openStatusDialog(branch)}
+                              >
+                                {branch.isActive ? "Disable" : "Enable"}
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                <DataListCards className="md:hidden">
+                  {branches.map((branch) => (
+                    <DataListCard
+                      key={branch.id}
+                      title={branch.branchCode}
+                      subtitle={branch.branchName}
+                      badge={
+                        <Badge variant={branch.isActive ? "success" : "neutral"}>
+                          {branch.isActive ? "Active" : "Inactive"}
+                        </Badge>
+                      }
+                      actions={
+                        <>
+                          <Link href={`/admin/branches/${branch.id}/edit`}>
+                            <Button variant="outline" className="px-3 py-1.5 text-xs">
+                              Edit
+                            </Button>
+                          </Link>
+                          <Link href={`/admin/branches/${branch.id}`}>
+                            <Button variant="outline" className="px-3 py-1.5 text-xs">
+                              View
+                            </Button>
+                          </Link>
+                          <Button
+                            variant="outline"
+                            className="px-3 py-1.5 text-xs"
+                            onClick={() => openStatusDialog(branch)}
+                          >
+                            {branch.isActive ? "Disable" : "Enable"}
+                          </Button>
+                        </>
+                      }
+                    >
+                      {branch.address ? (
+                        <DataListCardField label="Address" value={branch.address} />
+                      ) : null}
+                      <DataListCardField
+                        label="Created"
+                        value={formatBranchDate(branch.createdAt)}
+                      />
+                    </DataListCard>
+                  ))}
+                </DataListCards>
 
                 <Pagination
                   className="mt-4"

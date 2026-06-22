@@ -13,6 +13,7 @@ export type AdminBrandProps = {
   variant?: AdminBrandVariant;
   showTagline?: boolean;
   tagline?: string;
+  hideTaglineOnMobile?: boolean;
   showAdminLabel?: boolean;
   adminLabel?: string;
   className?: string;
@@ -107,6 +108,7 @@ export function AdminBrand({
   variant = "dark",
   showTagline = false,
   tagline = "Trusted Banking Partner",
+  hideTaglineOnMobile = false,
   showAdminLabel = false,
   adminLabel = "Admin Portal",
   className = "",
@@ -139,8 +141,8 @@ export function AdminBrand({
         {showTagline ? (
           <p
             className={`mt-0.5 ${config.tagline} ${
-              isLight ? "text-brand-blue-25" : "text-brand-black-75"
-            }`}
+              hideTaglineOnMobile ? "hidden sm:block" : ""
+            } ${isLight ? "text-brand-blue-25" : "text-brand-black-75"}`}
           >
             {tagline}
           </p>

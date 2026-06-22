@@ -29,7 +29,7 @@ export function UserRowActions({
   onTransferClick,
 }: UserRowActionsProps) {
   return (
-    <div className="flex flex-nowrap items-center gap-1">
+    <div className="flex flex-wrap items-center gap-1">
       <Link href={`/admin/users/${user.id}`}>
         <Button variant="outline" className={actionButtonClass}>
           View

@@ -4,6 +4,11 @@ import { useCallback, useEffect, useState } from "react";
 import { DOCUMENT_STATUSES } from "@saptakoshi/shared";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
+import {
+  DataListCard,
+  DataListCardField,
+  DataListCards,
+} from "@/components/ui/DataListCard";
 import { Input } from "@/components/ui/Input";
 import { Pagination } from "@/components/ui/Pagination";
 import {
@@ -150,7 +155,7 @@ export function DocumentReviewList({
       />
       <CardContent className="space-y-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-          <div className="max-w-xs flex-1">
+          <div className="w-full flex-1 sm:max-w-xs">
             <label
               htmlFor="status-filter"
               className="mb-1.5 block text-sm font-medium text-brand-black"
@@ -175,7 +180,7 @@ export function DocumentReviewList({
           </div>
 
           {showBranchColumn && onBranchChange ? (
-            <div className="max-w-xs flex-1">
+            <div className="w-full flex-1 sm:max-w-xs">
               <label
                 htmlFor="branch-filter"
                 className="mb-1.5 block text-sm font-medium text-brand-black"
@@ -232,68 +237,121 @@ export function DocumentReviewList({
             </p>
           </div>
         ) : (
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableHeaderCell>Document No.</TableHeaderCell>
-                <TableHeaderCell>Customer</TableHeaderCell>
-                {showBranchColumn ? (
-                  <TableHeaderCell>Branch</TableHeaderCell>
-                ) : null}
-                <TableHeaderCell>Status</TableHeaderCell>
-                <TableHeaderCell>Uploaded By</TableHeaderCell>
-                <TableHeaderCell>Uploaded</TableHeaderCell>
-                <TableHeaderCell>Reviewed By</TableHeaderCell>
-                <TableHeaderCell>Reviewed At</TableHeaderCell>
-                <TableHeaderCell>Rejection Remarks</TableHeaderCell>
-                <TableHeaderCell>Actions</TableHeaderCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
+          <>
+            <div className="hidden md:block">
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableHeaderCell>Document No.</TableHeaderCell>
+                    <TableHeaderCell>Customer</TableHeaderCell>
+                    {showBranchColumn ? (
+                      <TableHeaderCell>Branch</TableHeaderCell>
+                    ) : null}
+                    <TableHeaderCell>Status</TableHeaderCell>
+                    <TableHeaderCell>Uploaded By</TableHeaderCell>
+                    <TableHeaderCell>Uploaded</TableHeaderCell>
+                    <TableHeaderCell>Reviewed By</TableHeaderCell>
+                    <TableHeaderCell>Reviewed At</TableHeaderCell>
+                    <TableHeaderCell>Rejection Remarks</TableHeaderCell>
+                    <TableHeaderCell>Actions</TableHeaderCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {documents.map((document) => (
+                    <TableRow key={document.id}>
+                      <TableCell className="font-medium text-brand-blue">
+                        {document.documentNo}
+                      </TableCell>
+                      <TableCell>
+                        {document.firstName} {document.lastName}
+                      </TableCell>
+                      {showBranchColumn ? (
+                        <TableCell>
+                          {document.branchCode} — {document.branchName}
+                        </TableCell>
+                      ) : null}
+                      <TableCell>
+                        <DocumentStatusBadge status={document.status} />
+                      </TableCell>
+                      <TableCell>{document.uploadedByName}</TableCell>
+                      <TableCell>{formatDocumentDate(document.createdAt)}</TableCell>
+                      <TableCell>{document.reviewedByName ?? "—"}</TableCell>
+                      <TableCell>
+                        {document.reviewedAt
+                          ? formatDocumentDate(document.reviewedAt)
+                          : "—"}
+                      </TableCell>
+                      <TableCell className="max-w-xs truncate">
+                        {document.rejectionRemarks ?? "—"}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex justify-end">
+                          <Button
+                            href={`${reviewBasePath}/${document.id}`}
+                            variant="outline"
+                            className="px-3 py-1.5 text-xs"
+                          >
+                            {document.status === DOCUMENT_STATUSES.PENDING
+                              ? "Review"
+                              : "View"}
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            <DataListCards className="md:hidden">
               {documents.map((document) => (
-                <TableRow key={document.id}>
-                  <TableCell className="font-medium text-brand-blue">
-                    {document.documentNo}
-                  </TableCell>
-                  <TableCell>
-                    {document.firstName} {document.lastName}
-                  </TableCell>
+                <DataListCard
+                  key={document.id}
+                  title={document.documentNo}
+                  subtitle={`${document.firstName} ${document.lastName}`}
+                  badge={<DocumentStatusBadge status={document.status} />}
+                  actions={
+                    <Button
+                      href={`${reviewBasePath}/${document.id}`}
+                      variant="outline"
+                      className="px-3 py-1.5 text-xs"
+                    >
+                      {document.status === DOCUMENT_STATUSES.PENDING
+                        ? "Review"
+                        : "View"}
+                    </Button>
+                  }
+                >
                   {showBranchColumn ? (
-                    <TableCell>
-                      {document.branchCode} — {document.branchName}
-                    </TableCell>
+                    <DataListCardField
+                      label="Branch"
+                      value={`${document.branchCode} — ${document.branchName}`}
+                    />
                   ) : null}
-                  <TableCell>
-                    <DocumentStatusBadge status={document.status} />
-                  </TableCell>
-                  <TableCell>{document.uploadedByName}</TableCell>
-                  <TableCell>{formatDocumentDate(document.createdAt)}</TableCell>
-                  <TableCell>{document.reviewedByName ?? "—"}</TableCell>
-                  <TableCell>
-                    {document.reviewedAt
-                      ? formatDocumentDate(document.reviewedAt)
-                      : "—"}
-                  </TableCell>
-                  <TableCell className="max-w-xs truncate">
-                    {document.rejectionRemarks ?? "—"}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex justify-end">
-                      <Button
-                        href={`${reviewBasePath}/${document.id}`}
-                        variant="outline"
-                        className="px-3 py-1.5 text-xs"
-                      >
-                        {document.status === DOCUMENT_STATUSES.PENDING
-                          ? "Review"
-                          : "View"}
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
+                  <DataListCardField
+                    label="Uploaded"
+                    value={formatDocumentDate(document.createdAt)}
+                  />
+                  <DataListCardField
+                    label="Uploaded by"
+                    value={document.uploadedByName}
+                  />
+                  {document.reviewedByName ? (
+                    <DataListCardField
+                      label="Reviewed by"
+                      value={document.reviewedByName}
+                    />
+                  ) : null}
+                  {document.rejectionRemarks ? (
+                    <DataListCardField
+                      label="Remarks"
+                      value={document.rejectionRemarks}
+                    />
+                  ) : null}
+                </DataListCard>
               ))}
-            </TableBody>
-          </Table>
+            </DataListCards>
+          </>
         )}
 
         {!isLoading ? (
