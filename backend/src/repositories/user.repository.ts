@@ -1,4 +1,5 @@
 import { query } from "../config/database";
+import type { DbExecutor } from "../config/database";
 
 export interface UserRow {
   id: number;
@@ -139,8 +140,11 @@ export async function findAll(
   );
 }
 
-export async function findById(id: number): Promise<UserWithBranchRow | null> {
-  const rows = await query<UserWithBranchRow>(
+export async function findById(
+  id: number,
+  executor: DbExecutor = { query }
+): Promise<UserWithBranchRow | null> {
+  const rows = await executor.query<UserWithBranchRow>(
     `SELECT ${USER_SELECT_COLUMNS}
      FROM users u
      LEFT JOIN branches b ON b.id = u.branch_id
@@ -253,6 +257,23 @@ export async function updateStatus(
   }
 
   return findById(rows[0].id);
+}
+
+export async function updateBranchId(
+  id: number,
+  branchId: number,
+  executor: DbExecutor = { query }
+): Promise<number | null> {
+  const rows = await executor.query<{ id: number }>(
+    `UPDATE users
+     SET branch_id = $2,
+         updated_at = NOW()
+     WHERE id = $1
+     RETURNING id`,
+    [id, branchId]
+  );
+
+  return rows[0]?.id ?? null;
 }
 
 export async function updatePassword(

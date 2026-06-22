@@ -22,6 +22,7 @@ import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { ApiError } from "@/lib/api-client";
 import { fetchUsers, formatUserDate } from "@/features/users/api";
 import { ResetPasswordDialog } from "@/features/users/ResetPasswordDialog";
+import { TransferBranchDialog } from "@/features/users/TransferBranchDialog";
 import { UserStatusDialog } from "@/features/users/UserStatusDialog";
 import type { BranchOption, User } from "@/features/users/types";
 import {
@@ -65,6 +66,7 @@ export function UserListContent() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
+  const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
 
   const loadUsers = useCallback(async () => {
     setIsLoading(true);
@@ -169,9 +171,26 @@ export function UserListContent() {
     setIsResetDialogOpen(true);
   }
 
+  function openTransferDialog(targetUser: User) {
+    setSelectedUser(targetUser);
+    setIsTransferDialogOpen(true);
+  }
+
   function handleStatusUpdated(updatedUser: User) {
     setUsers((current) =>
       current.map((item) => (item.id === updatedUser.id ? updatedUser : item))
+    );
+  }
+
+  function handleTransferUpdated(updatedUser: User) {
+    setUsers((current) =>
+      current.map((item) => (item.id === updatedUser.id ? updatedUser : item))
+    );
+  }
+
+  function canTransferUser(targetUser: User): boolean {
+    return (
+      targetUser.role === "EMPLOYEE" || targetUser.role === "BRANCH_MANAGER"
     );
   }
 
@@ -365,6 +384,15 @@ export function UserListContent() {
                             >
                               Reset Password
                             </Button>
+                            {canTransferUser(item) ? (
+                              <Button
+                                variant="outline"
+                                className="px-3 py-1.5 text-xs"
+                                onClick={() => openTransferDialog(item)}
+                              >
+                                Transfer Branch
+                              </Button>
+                            ) : null}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -404,6 +432,17 @@ export function UserListContent() {
           setIsResetDialogOpen(false);
           setSelectedUser(null);
         }}
+      />
+
+      <TransferBranchDialog
+        user={selectedUser}
+        branchOptions={branchOptions}
+        open={isTransferDialogOpen}
+        onClose={() => {
+          setIsTransferDialogOpen(false);
+          setSelectedUser(null);
+        }}
+        onSuccess={handleTransferUpdated}
       />
     </AdminLayout>
   );

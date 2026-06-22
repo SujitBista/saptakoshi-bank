@@ -7,6 +7,7 @@ import {
   listUsers,
   MAX_USER_PAGE_SIZE,
   resetUserPassword,
+  transferUserBranch,
   updateUser,
   updateUserStatus,
   UserError,
@@ -44,12 +45,40 @@ function parseOptionalPositiveInt(value: unknown): number | undefined {
   return parsed;
 }
 
+function parseTransferBranchId(value: unknown): number | undefined {
+  if (value === undefined || value === null || value === "") {
+    return undefined;
+  }
+
+  const parsed = Number(value);
+
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    return undefined;
+  }
+
+  return parsed;
+}
+
 function handleUserError(error: unknown, res: Response): void {
   if (error instanceof UserError) {
     res.status(error.statusCode).json({ error: error.message });
     return;
   }
 
+  if (
+    error &&
+    typeof error === "object" &&
+    "code" in error &&
+    error.code === "42P01"
+  ) {
+    res.status(500).json({
+      error:
+        "Branch transfer history table is missing. Run database migrations and try again.",
+    });
+    return;
+  }
+
+  console.error("User operation failed:", error);
   res.status(500).json({ error: "User operation failed" });
 }
 
@@ -144,6 +173,40 @@ export async function patchUserStatus(
 
   try {
     const user = await updateUserStatus(id, isActive);
+    res.json({ user });
+  } catch (error) {
+    handleUserError(error, res);
+  }
+}
+
+export async function patchUserTransfer(
+  req: Request,
+  res: Response
+): Promise<void> {
+  const id = Number(req.params.id);
+
+  if (!Number.isInteger(id) || id <= 0) {
+    res.status(400).json({ error: "Invalid user id" });
+    return;
+  }
+
+  const transferredBy = req.user?.id;
+
+  if (!transferredBy) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+
+  const branchId = parseTransferBranchId(req.body?.branchId);
+  const remarks =
+    typeof req.body?.remarks === "string" ? req.body.remarks : undefined;
+
+  try {
+    const user = await transferUserBranch(
+      id,
+      { branchId, remarks },
+      transferredBy
+    );
     res.json({ user });
   } catch (error) {
     handleUserError(error, res);

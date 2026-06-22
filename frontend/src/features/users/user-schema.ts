@@ -78,6 +78,22 @@ export const resetPasswordSchema = z.object({
   password: z.string().trim().min(1, "Password is required"),
 });
 
+export const transferBranchSchema = z
+  .object({
+    branchId: z.string().trim().min(1, "New branch is required"),
+    remarks: z.string().trim().max(500, "Remarks must be 500 characters or less"),
+  })
+  .superRefine((values, context) => {
+    if (!values.branchId) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "New branch is required",
+        path: ["branchId"],
+      });
+    }
+  });
+
 export type UserCreateFormSchemaValues = z.infer<typeof userCreateFormSchema>;
 export type UserEditFormSchemaValues = z.infer<typeof userEditFormSchema>;
 export type ResetPasswordSchemaValues = z.infer<typeof resetPasswordSchema>;
+export type TransferBranchSchemaValues = z.infer<typeof transferBranchSchema>;
