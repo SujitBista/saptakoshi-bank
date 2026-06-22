@@ -73,3 +73,4 @@ export interface AccountOpeningDocumentSearchFilters {
 
 export const DEFAULT_ACCOUNT_OPENING_PAGE = 1;
 export const DEFAULT_ACCOUNT_OPENING_PAGE_SIZE = 10;
+export const ACCOUNT_OPENING_PAGE_SIZE_OPTIONS = [10, 25, 50] as const;

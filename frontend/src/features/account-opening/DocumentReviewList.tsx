@@ -24,6 +24,7 @@ import type {
   DocumentStatusFilter,
 } from "@/features/account-opening/types";
 import {
+  ACCOUNT_OPENING_PAGE_SIZE_OPTIONS,
   DEFAULT_ACCOUNT_OPENING_PAGE,
   DEFAULT_ACCOUNT_OPENING_PAGE_SIZE,
 } from "@/features/account-opening/types";
@@ -68,6 +69,9 @@ export function DocumentReviewList({
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<DocumentStatusFilter>("ALL");
   const [page, setPage] = useState(DEFAULT_ACCOUNT_OPENING_PAGE);
+  const [pageSize, setPageSize] = useState<number>(
+    DEFAULT_ACCOUNT_OPENING_PAGE_SIZE
+  );
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -88,7 +92,7 @@ export function DocumentReviewList({
         status: statusFilter === "ALL" ? undefined : statusFilter,
         branchId,
         page,
-        limit: DEFAULT_ACCOUNT_OPENING_PAGE_SIZE,
+        limit: pageSize,
       });
 
       setDocuments(data.data ?? []);
@@ -105,7 +109,12 @@ export function DocumentReviewList({
     } finally {
       setIsLoading(false);
     }
-  }, [branchId, debouncedSearch, enabled, page, statusFilter]);
+  }, [branchId, debouncedSearch, enabled, page, pageSize, statusFilter]);
+
+  function handlePageSizeChange(value: number) {
+    setPageSize(value);
+    setPage(DEFAULT_ACCOUNT_OPENING_PAGE);
+  }
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -287,14 +296,19 @@ export function DocumentReviewList({
           </Table>
         )}
 
-        <Pagination
-          page={page}
-          totalPages={totalPages}
-          total={total}
-          pageSize={DEFAULT_ACCOUNT_OPENING_PAGE_SIZE}
-          itemLabel="documents"
-          onPageChange={setPage}
-        />
+        {!isLoading ? (
+          <Pagination
+            className="mt-4"
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            pageSize={pageSize}
+            itemLabel="documents"
+            pageSizeOptions={ACCOUNT_OPENING_PAGE_SIZE_OPTIONS}
+            onPageChange={setPage}
+            onPageSizeChange={handlePageSizeChange}
+          />
+        ) : null}
       </CardContent>
     </Card>
   );
