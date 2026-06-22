@@ -18,22 +18,40 @@ export function TableBody({ children }: { children: ReactNode }) {
   return <tbody className="divide-y divide-brand-black-15 bg-white">{children}</tbody>;
 }
 
-export function TableRow({ children }: { children: ReactNode }) {
-  return <tr className="hover:bg-brand-blue-05/50">{children}</tr>;
+export function TableRow({
+  children,
+  className = "",
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return <tr className={`hover:bg-brand-blue-05/50 ${className}`}>{children}</tr>;
 }
 
-export function TableHeaderCell({ children }: { children: ReactNode }) {
+export function TableHeaderCell({
+  children,
+  className = "",
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <th
       scope="col"
-      className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-brand-black-75"
+      className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-brand-black-75 ${className}`}
     >
       {children}
     </th>
   );
 }
 
-export function TableCell({ children, className = "" }: { children: ReactNode; className?: string }) {
+export function TableCell({
+  children,
+  className = "",
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <td className={`whitespace-nowrap px-4 py-3 text-sm text-brand-black ${className}`}>
       {children}
