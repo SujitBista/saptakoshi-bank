@@ -128,6 +128,10 @@ export function DocumentReviewViewContent({
     document?.status === DOCUMENT_STATUSES.PENDING &&
     ((variant === "branch-manager" && user?.role === USER_ROLES.BRANCH_MANAGER) ||
       (variant === "admin" && user?.role === USER_ROLES.ADMIN));
+  const pageTitle = canReview ? "Review Document" : "View Document";
+  const pageDescription = canReview
+    ? "Approve or reject this account opening document"
+    : "View this account opening document and review history";
 
   const layoutProps = {
     userEmail: user?.email,
@@ -139,10 +143,8 @@ export function DocumentReviewViewContent({
     <div className="mx-auto max-w-3xl">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-brand-blue">Review Document</h1>
-          <p className="mt-1 text-sm text-brand-black-75">
-            Approve or reject this account opening document
-          </p>
+          <h1 className="text-2xl font-bold text-brand-blue">{pageTitle}</h1>
+          <p className="mt-1 text-sm text-brand-black-75">{pageDescription}</p>
         </div>
         <div className="flex flex-wrap gap-3">
           <Button href={reviewListPath} variant="outline">

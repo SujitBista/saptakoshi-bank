@@ -59,6 +59,8 @@ export interface AccountOpeningDocumentListResponse {
   totalPages: number;
 }
 
+export type DocumentStatusFilter = DocumentStatus | "ALL";
+
 export interface AccountOpeningDocumentSearchFilters {
   search?: string;
   clientCode?: string;
