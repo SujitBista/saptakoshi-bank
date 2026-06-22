@@ -80,7 +80,7 @@ export function AccountOpeningDocumentViewContent({
       <div className="mx-auto max-w-3xl">
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-brand-blue">Document Details</h1>
+            <h1 className="text-xl font-bold text-brand-blue sm:text-2xl">Document Details</h1>
             <p className="mt-1 text-sm text-brand-black-75">
               View account opening document information
             </p>

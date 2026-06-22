@@ -75,7 +75,7 @@ export function AccountOpeningDocumentPdfViewer({
     <iframe
       src={pdfUrl ?? undefined}
       title="Uploaded document PDF"
-      className="h-[70vh] w-full rounded-lg border border-brand-black-15 bg-white"
+      className="h-[50vh] w-full rounded-lg border border-brand-black-15 bg-white sm:h-[70vh]"
     />
   );
 }

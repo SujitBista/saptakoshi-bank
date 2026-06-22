@@ -23,7 +23,7 @@ export function UserDashboardContent() {
     >
       <div className="mx-auto max-w-5xl">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-brand-blue">Dashboard</h1>
+          <h1 className="text-xl font-bold text-brand-blue sm:text-2xl">Dashboard</h1>
           <p className="mt-1 text-sm text-brand-black-75">
             Welcome to the Saptakoshi Development Bank staff portal
           </p>

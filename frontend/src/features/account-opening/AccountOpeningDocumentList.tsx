@@ -4,6 +4,11 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
+import {
+  DataListCard,
+  DataListCardField,
+  DataListCards,
+} from "@/components/ui/DataListCard";
 import { Input } from "@/components/ui/Input";
 import { Pagination } from "@/components/ui/Pagination";
 import {
@@ -18,6 +23,7 @@ import {
   fetchAccountOpeningDocuments,
   formatDocumentDate,
 } from "@/features/account-opening/api";
+import { DocumentStatusBadge } from "@/features/account-opening/DocumentStatusBadge";
 import type { AccountOpeningDocument } from "@/features/account-opening/types";
 import {
   ACCOUNT_OPENING_PAGE_SIZE_OPTIONS,
@@ -143,35 +149,66 @@ export function AccountOpeningDocumentList({
             No documents found.
           </p>
         ) : (
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableHeaderCell>Document No.</TableHeaderCell>
-                <TableHeaderCell>Client Code</TableHeaderCell>
-                <TableHeaderCell>Customer Name</TableHeaderCell>
-                <TableHeaderCell>Citizen No.</TableHeaderCell>
-                <TableHeaderCell>Mobile</TableHeaderCell>
-                <TableHeaderCell>Uploaded</TableHeaderCell>
-                <TableHeaderCell>Status</TableHeaderCell>
-                <TableHeaderCell>Actions</TableHeaderCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
+          <>
+            <div className="hidden md:block">
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableHeaderCell>Document No.</TableHeaderCell>
+                    <TableHeaderCell>Client Code</TableHeaderCell>
+                    <TableHeaderCell>Customer Name</TableHeaderCell>
+                    <TableHeaderCell>Citizen No.</TableHeaderCell>
+                    <TableHeaderCell>Mobile</TableHeaderCell>
+                    <TableHeaderCell>Uploaded</TableHeaderCell>
+                    <TableHeaderCell>Status</TableHeaderCell>
+                    <TableHeaderCell>Actions</TableHeaderCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {documents.map((document) => (
+                    <TableRow key={document.id}>
+                      <TableCell className="font-medium text-brand-blue">
+                        {document.documentNo}
+                      </TableCell>
+                      <TableCell>{document.clientCode}</TableCell>
+                      <TableCell>
+                        {document.firstName} {document.lastName}
+                      </TableCell>
+                      <TableCell>{document.citizenNo}</TableCell>
+                      <TableCell>{document.mobileNumber}</TableCell>
+                      <TableCell>{formatDocumentDate(document.createdAt)}</TableCell>
+                      <TableCell>
+                        <DocumentStatusBadge status={document.status} />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex justify-end gap-2">
+                          <Link href={`/dashboard/account-opening-documents/${document.id}`}>
+                            <Button variant="outline" className="px-3 py-1.5 text-xs">
+                              View
+                            </Button>
+                          </Link>
+                          <Link
+                            href={`/dashboard/account-opening-documents/${document.id}/edit`}
+                          >
+                            <Button className="px-3 py-1.5 text-xs">Edit</Button>
+                          </Link>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            <DataListCards className="md:hidden">
               {documents.map((document) => (
-                <TableRow key={document.id}>
-                  <TableCell className="font-medium text-brand-blue">
-                    {document.documentNo}
-                  </TableCell>
-                  <TableCell>{document.clientCode}</TableCell>
-                  <TableCell>
-                    {document.firstName} {document.lastName}
-                  </TableCell>
-                  <TableCell>{document.citizenNo}</TableCell>
-                  <TableCell>{document.mobileNumber}</TableCell>
-                  <TableCell>{formatDocumentDate(document.createdAt)}</TableCell>
-                  <TableCell>{document.status}</TableCell>
-                  <TableCell>
-                    <div className="flex justify-end gap-2">
+                <DataListCard
+                  key={document.id}
+                  title={document.documentNo}
+                  subtitle={`${document.firstName} ${document.lastName}`}
+                  badge={<DocumentStatusBadge status={document.status} />}
+                  actions={
+                    <>
                       <Link href={`/dashboard/account-opening-documents/${document.id}`}>
                         <Button variant="outline" className="px-3 py-1.5 text-xs">
                           View
@@ -182,12 +219,20 @@ export function AccountOpeningDocumentList({
                       >
                         <Button className="px-3 py-1.5 text-xs">Edit</Button>
                       </Link>
-                    </div>
-                  </TableCell>
-                </TableRow>
+                    </>
+                  }
+                >
+                  <DataListCardField label="Client" value={document.clientCode} />
+                  <DataListCardField label="Citizen" value={document.citizenNo} />
+                  <DataListCardField label="Mobile" value={document.mobileNumber} />
+                  <DataListCardField
+                    label="Uploaded"
+                    value={formatDocumentDate(document.createdAt)}
+                  />
+                </DataListCard>
               ))}
-            </TableBody>
-          </Table>
+            </DataListCards>
+          </>
         )}
 
         {!isLoading ? (

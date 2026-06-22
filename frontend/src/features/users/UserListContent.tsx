@@ -6,6 +6,11 @@ import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
+import {
+  DataListCard,
+  DataListCardField,
+  DataListCards,
+} from "@/components/ui/DataListCard";
 import { Input } from "@/components/ui/Input";
 import { Pagination } from "@/components/ui/Pagination";
 import { Select } from "@/components/ui/Select";
@@ -230,13 +235,13 @@ export function UserListContent() {
       <div className="mx-auto max-w-6xl">
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-brand-blue">Users</h1>
+            <h1 className="text-xl font-bold text-brand-blue sm:text-2xl">Users</h1>
             <p className="mt-1 text-sm text-brand-black-75">
               Manage staff accounts across branches
             </p>
           </div>
-          <Link href="/admin/users/new">
-            <Button>Add User</Button>
+          <Link href="/admin/users/new" className="w-full sm:w-auto">
+            <Button className="w-full sm:w-auto">Add User</Button>
           </Link>
         </div>
 
@@ -324,90 +329,146 @@ export function UserListContent() {
                 </p>
               </div>
             ) : (
-              <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableHeaderCell className={compactTableHeaderClass}>
-                        Full Name
-                      </TableHeaderCell>
-                      <TableHeaderCell className={compactTableHeaderClass}>
-                        Username
-                      </TableHeaderCell>
-                      <TableHeaderCell className={compactTableHeaderClass}>
-                        Email
-                      </TableHeaderCell>
-                      <TableHeaderCell className={compactTableHeaderClass}>
-                        Branch Code
-                      </TableHeaderCell>
-                      <TableHeaderCell className={compactTableHeaderClass}>
-                        Branch Name
-                      </TableHeaderCell>
-                      <TableHeaderCell className={compactTableHeaderClass}>
-                        Role
-                      </TableHeaderCell>
-                      <TableHeaderCell className={compactTableHeaderClass}>
-                        Status
-                      </TableHeaderCell>
-                      <TableHeaderCell className={compactTableHeaderClass}>
-                        Created Date
-                      </TableHeaderCell>
-                      <TableHeaderCell className={compactTableHeaderClass}>
-                        Actions
-                      </TableHeaderCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {users.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell
-                          className={`${compactTableCellClass} font-medium text-brand-blue`}
+              <>
+                <div className="hidden md:block">
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableHeaderCell className={compactTableHeaderClass}>
+                          Full Name
+                        </TableHeaderCell>
+                        <TableHeaderCell className={compactTableHeaderClass}>
+                          Username
+                        </TableHeaderCell>
+                        <TableHeaderCell className={compactTableHeaderClass}>
+                          Email
+                        </TableHeaderCell>
+                        <TableHeaderCell className={compactTableHeaderClass}>
+                          Branch Code
+                        </TableHeaderCell>
+                        <TableHeaderCell className={compactTableHeaderClass}>
+                          Branch Name
+                        </TableHeaderCell>
+                        <TableHeaderCell className={compactTableHeaderClass}>
+                          Role
+                        </TableHeaderCell>
+                        <TableHeaderCell className={compactTableHeaderClass}>
+                          Status
+                        </TableHeaderCell>
+                        <TableHeaderCell className={compactTableHeaderClass}>
+                          Created Date
+                        </TableHeaderCell>
+                        <TableHeaderCell className={compactTableHeaderClass}>
+                          Actions
+                        </TableHeaderCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {users.map((item) => (
+                        <TableRow key={item.id}>
+                          <TableCell
+                            className={`${compactTableCellClass} font-medium text-brand-blue`}
+                          >
+                            {item.fullName}
+                          </TableCell>
+                          <TableCell className={compactTableCellClass}>
+                            {item.username}
+                          </TableCell>
+                          <TableCell className={compactTableCellClass}>
+                            {item.email}
+                          </TableCell>
+                          <TableCell className={compactTableCellClass}>
+                            {item.branchCode || "—"}
+                          </TableCell>
+                          <TableCell className={compactTableCellClass}>
+                            {item.branchName || "—"}
+                          </TableCell>
+                          <TableCell className={compactTableCellClass}>
+                            <Badge
+                              size="compact"
+                              variant={ROLE_BADGE_VARIANTS[item.role] ?? "neutral"}
+                            >
+                              {ROLE_BADGE_LABELS[item.role] ?? item.role}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className={compactTableCellClass}>
+                            <Badge
+                              size="compact"
+                              variant={item.isActive ? "success" : "neutral"}
+                            >
+                              {item.isActive ? "Active" : "Inactive"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className={compactTableCellClass}>
+                            {formatUserDate(item.createdAt)}
+                          </TableCell>
+                          <TableCell className={compactTableCellClass}>
+                            <UserRowActions
+                              user={item}
+                              canTransfer={canTransferUser(item)}
+                              onStatusClick={openStatusDialog}
+                              onResetClick={openResetDialog}
+                              onTransferClick={openTransferDialog}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                <DataListCards className="md:hidden">
+                  {users.map((item) => (
+                    <DataListCard
+                      key={item.id}
+                      title={item.fullName}
+                      subtitle={item.email}
+                      badge={
+                        <Badge
+                          size="compact"
+                          variant={item.isActive ? "success" : "neutral"}
                         >
-                          {item.fullName}
-                        </TableCell>
-                        <TableCell className={compactTableCellClass}>
-                          {item.username}
-                        </TableCell>
-                        <TableCell className={compactTableCellClass}>
-                          {item.email}
-                        </TableCell>
-                        <TableCell className={compactTableCellClass}>
-                          {item.branchCode || "—"}
-                        </TableCell>
-                        <TableCell className={compactTableCellClass}>
-                          {item.branchName || "—"}
-                        </TableCell>
-                        <TableCell className={compactTableCellClass}>
+                          {item.isActive ? "Active" : "Inactive"}
+                        </Badge>
+                      }
+                      actions={
+                        <UserRowActions
+                          user={item}
+                          canTransfer={canTransferUser(item)}
+                          onStatusClick={openStatusDialog}
+                          onResetClick={openResetDialog}
+                          onTransferClick={openTransferDialog}
+                        />
+                      }
+                    >
+                      <DataListCardField label="Username" value={item.username} />
+                      <DataListCardField
+                        label="Branch"
+                        value={
+                          item.branchCode
+                            ? `${item.branchCode} — ${item.branchName ?? ""}`
+                            : "—"
+                        }
+                      />
+                      <DataListCardField
+                        label="Role"
+                        value={
                           <Badge
                             size="compact"
                             variant={ROLE_BADGE_VARIANTS[item.role] ?? "neutral"}
                           >
                             {ROLE_BADGE_LABELS[item.role] ?? item.role}
                           </Badge>
-                        </TableCell>
-                        <TableCell className={compactTableCellClass}>
-                          <Badge
-                            size="compact"
-                            variant={item.isActive ? "success" : "neutral"}
-                          >
-                            {item.isActive ? "Active" : "Inactive"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className={compactTableCellClass}>
-                          {formatUserDate(item.createdAt)}
-                        </TableCell>
-                        <TableCell className={compactTableCellClass}>
-                          <UserRowActions
-                            user={item}
-                            canTransfer={canTransferUser(item)}
-                            onStatusClick={openStatusDialog}
-                            onResetClick={openResetDialog}
-                            onTransferClick={openTransferDialog}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                        }
+                      />
+                      <DataListCardField
+                        label="Created"
+                        value={formatUserDate(item.createdAt)}
+                      />
+                    </DataListCard>
+                  ))}
+                </DataListCards>
+              </>
             )}
 
             {!isLoading ? (
