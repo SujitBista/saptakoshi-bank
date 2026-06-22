@@ -13,6 +13,36 @@ async function ensureMigrationsTable(): Promise<void> {
   `);
 }
 
+const EMPLOYEE_BRANCH_HISTORY_MIGRATION =
+  "009_create_employee_branch_history.sql";
+
+async function repairEmployeeBranchHistoryTable(
+  migrationsDir: string,
+  applied: Set<string>
+): Promise<void> {
+  if (!applied.has(EMPLOYEE_BRANCH_HISTORY_MIGRATION)) {
+    return;
+  }
+
+  const tableCheck = await query<{ reg: string | null }>(
+    "SELECT to_regclass('public.employee_branch_history') AS reg"
+  );
+
+  if (tableCheck[0]?.reg) {
+    return;
+  }
+
+  const sql = fs.readFileSync(
+    path.join(migrationsDir, EMPLOYEE_BRANCH_HISTORY_MIGRATION),
+    "utf8"
+  );
+
+  await query(sql);
+  console.log(
+    `Repaired missing employee_branch_history table from ${EMPLOYEE_BRANCH_HISTORY_MIGRATION}.`
+  );
+}
+
 async function bootstrapMigrationHistory(files: string[]): Promise<void> {
   const rows = await query<{ count: string }>(
     "SELECT COUNT(*)::text AS count FROM schema_migrations"
@@ -55,7 +85,8 @@ async function bootstrapMigrationHistory(files: string[]): Promise<void> {
       return file < "008_document_approval_and_roles.sql";
     }
 
-    return true;
+    // Only mark migrations through 008 as applied. Newer migrations must run normally.
+    return file < "009_create_employee_branch_history.sql";
   });
 
   for (const file of alreadyApplied) {
@@ -91,6 +122,8 @@ async function main(): Promise<void> {
     "SELECT filename FROM schema_migrations ORDER BY filename"
   );
   const applied = new Set(appliedRows.map((row) => row.filename));
+
+  await repairEmployeeBranchHistoryTable(migrationsDir, applied);
 
   let appliedCount = 0;
 

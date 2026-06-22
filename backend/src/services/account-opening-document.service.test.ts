@@ -329,6 +329,114 @@ describe("account-opening-document.service", () => {
     );
   });
 
+  it("denies transferred branch manager access to old branch documents", async () => {
+    const transferredManager = {
+      ...branchManagerOne,
+      branch_id: 5,
+      branch_code: "BRT005",
+      branch_name: "Itahari Branch",
+    };
+
+    vi.mocked(userRepository.findById).mockResolvedValue(transferredManager);
+    vi.mocked(accountOpeningDocumentRepository.findById).mockResolvedValue(
+      documentRow
+    );
+
+    await expect(
+      getAccountOpeningDocumentById(
+        {
+          id: transferredManager.id,
+          email: transferredManager.email,
+          role: USER_ROLES.BRANCH_MANAGER,
+          branch_id: 5,
+        },
+        11
+      )
+    ).rejects.toThrow(
+      new AccountOpeningDocumentError(
+        "Document is not in your assigned branch",
+        403
+      )
+    );
+  });
+
+  it("allows transferred branch manager access to new branch documents", async () => {
+    const transferredManager = {
+      ...branchManagerOne,
+      branch_id: 5,
+      branch_code: "BRT005",
+      branch_name: "Itahari Branch",
+    };
+    const newBranchDocument = {
+      ...documentRow,
+      branch_id: 5,
+      branch_code: "BRT005",
+      branch_name: "Itahari Branch",
+    };
+
+    vi.mocked(userRepository.findById).mockResolvedValue(transferredManager);
+    vi.mocked(accountOpeningDocumentRepository.findById).mockResolvedValue(
+      newBranchDocument
+    );
+
+    const result = await getAccountOpeningDocumentById(
+      {
+        id: transferredManager.id,
+        email: transferredManager.email,
+        role: USER_ROLES.BRANCH_MANAGER,
+        branch_id: 5,
+      },
+      11
+    );
+
+    expect(result.branchId).toBe(5);
+    expect(result.branchCode).toBe("BRT005");
+  });
+
+  it("keeps historical document approvals unchanged after branch transfer", async () => {
+    const approvedDocument = {
+      ...documentRow,
+      status: DOCUMENT_STATUSES.APPROVED,
+      reviewed_by: branchManagerOne.id,
+      reviewed_at: new Date("2026-06-20T00:00:00.000Z"),
+      reviewed_by_name: branchManagerOne.full_name,
+    };
+    const transferredManager = {
+      ...branchManagerOne,
+      branch_id: 5,
+      branch_code: "BRT005",
+      branch_name: "Itahari Branch",
+    };
+
+    vi.mocked(userRepository.findById).mockResolvedValue(transferredManager);
+    vi.mocked(accountOpeningDocumentRepository.findById).mockResolvedValue(
+      approvedDocument
+    );
+
+    await expect(
+      getAccountOpeningDocumentById(
+        {
+          id: transferredManager.id,
+          email: transferredManager.email,
+          role: USER_ROLES.BRANCH_MANAGER,
+          branch_id: 5,
+        },
+        11
+      )
+    ).rejects.toThrow(
+      new AccountOpeningDocumentError(
+        "Document is not in your assigned branch",
+        403
+      )
+    );
+
+    expect(approvedDocument.branch_id).toBe(1);
+    expect(approvedDocument.reviewed_by).toBe(branchManagerOne.id);
+    expect(approvedDocument.reviewed_at).toEqual(
+      new Date("2026-06-20T00:00:00.000Z")
+    );
+  });
+
   it("rejects employee approve/reject attempts", async () => {
     vi.mocked(userRepository.findById).mockResolvedValue(currentEmployee);
     vi.mocked(accountOpeningDocumentRepository.findById).mockResolvedValue(

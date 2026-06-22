@@ -132,6 +132,23 @@ export async function resetUserPassword(
   return response.user;
 }
 
+export async function transferUserBranch(
+  id: number,
+  branchId: number,
+  remarks?: string
+): Promise<User> {
+  const response = await apiClient<UserResponse>(`/api/admin/users/${id}/transfer`, {
+    method: "PATCH",
+    body: {
+      branchId,
+      remarks: remarks?.trim() || undefined,
+    },
+    token: getToken(),
+  });
+
+  return response.user;
+}
+
 export function userToEditFormValues(user: User): UserEditFormValues {
   return {
     fullName: user.fullName,

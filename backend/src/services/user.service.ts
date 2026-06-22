@@ -1,6 +1,8 @@
 import { USER_ROLES } from "@saptakoshi/shared";
 import { hashPassword } from "../auth/password";
+import { withTransaction } from "../config/database";
 import * as branchRepository from "../repositories/branch.repository";
+import * as employeeBranchHistoryRepository from "../repositories/employee-branch-history.repository";
 import type { UserWithBranchRow } from "../repositories/user.repository";
 import * as userRepository from "../repositories/user.repository";
 
@@ -49,6 +51,11 @@ export interface UpdateUserPayload {
 
 export interface ResetPasswordPayload {
   password?: string;
+}
+
+export interface TransferUserBranchPayload {
+  branchId?: number;
+  remarks?: string;
 }
 
 export const DEFAULT_USER_PAGE = 1;
@@ -314,6 +321,75 @@ export async function updateUserStatus(
   if (!row) {
     throw new UserError("User not found", 404);
   }
+
+  return toUserDto(row);
+}
+
+export async function transferUserBranch(
+  id: number,
+  payload: TransferUserBranchPayload,
+  transferredBy: number
+): Promise<UserDto> {
+  const existing = await userRepository.findById(id);
+
+  if (!existing) {
+    throw new UserError("User not found", 404);
+  }
+
+  if (
+    existing.role !== USER_ROLES.EMPLOYEE &&
+    existing.role !== USER_ROLES.BRANCH_MANAGER
+  ) {
+    throw new UserError(
+      "Only employees and branch managers can be transferred between branches"
+    );
+  }
+
+  const newBranchId = payload.branchId;
+
+  if (newBranchId === undefined || !Number.isInteger(newBranchId) || newBranchId <= 0) {
+    throw new UserError("A valid new branch is required");
+  }
+
+  const branch = await branchRepository.findById(newBranchId);
+  if (!branch) {
+    throw new UserError("Branch not found", 404);
+  }
+
+  if (existing.branch_id === newBranchId) {
+    throw new UserError("New branch must be different from the current branch");
+  }
+
+  const row = await withTransaction(async (executor) => {
+    await employeeBranchHistoryRepository.insert(
+      {
+        userId: id,
+        oldBranchId: existing.branch_id,
+        newBranchId,
+        transferredBy,
+        remarks: payload.remarks,
+      },
+      executor
+    );
+
+    const updatedId = await userRepository.updateBranchId(
+      id,
+      newBranchId,
+      executor
+    );
+
+    if (!updatedId) {
+      throw new UserError("User not found", 404);
+    }
+
+    const updatedUser = await userRepository.findById(updatedId, executor);
+
+    if (!updatedUser) {
+      throw new UserError("User not found", 404);
+    }
+
+    return updatedUser;
+  });
 
   return toUserDto(row);
 }
