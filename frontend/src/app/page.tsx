@@ -1,31 +1,52 @@
+import Link from "next/link";
 import { APP_NAME } from "@saptakoshi/shared";
+import { PublicPortalLayout } from "@/components/layout/PublicPortalLayout";
+import { Button } from "@/components/ui/Button";
+import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-6">
-      <main className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-10 shadow-sm">
-        <p className="text-sm font-medium uppercase tracking-wider text-emerald-700">
-          Monorepo Foundation
-        </p>
-        <h1 className="mt-3 text-4xl font-bold tracking-tight text-slate-900">
-          {APP_NAME}
-        </h1>
-        <p className="mt-4 text-lg leading-relaxed text-slate-600">
-          Welcome to the frontend workspace. This page uses shared constants
-          from <code className="rounded bg-slate-100 px-1.5 py-0.5 text-sm">@saptakoshi/shared</code>.
-        </p>
-        <div className="mt-8 flex flex-wrap gap-3">
-          <span className="rounded-full bg-emerald-50 px-4 py-1.5 text-sm font-medium text-emerald-800">
-            Next.js
-          </span>
-          <span className="rounded-full bg-sky-50 px-4 py-1.5 text-sm font-medium text-sky-800">
-            TypeScript
-          </span>
-          <span className="rounded-full bg-violet-50 px-4 py-1.5 text-sm font-medium text-violet-800">
-            Tailwind CSS
-          </span>
-        </div>
-      </main>
-    </div>
+    <PublicPortalLayout>
+      <div className="mx-auto max-w-5xl">
+        <Card>
+          <CardHeader
+            title={APP_NAME}
+            description="Public product paper portal for Saptakoshi Development Bank"
+          />
+          <CardContent className="space-y-6">
+            <p className="text-sm leading-6 text-brand-black-75">
+              Browse public product paper PDFs by category. Documents open inside the
+              application with inline viewing and best-effort download deterrents.
+            </p>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-xl border border-brand-black-15 bg-brand-blue-05 p-5">
+                <h2 className="text-lg font-semibold text-brand-blue">Deposit</h2>
+                <p className="mt-2 text-sm text-brand-black-75">
+                  View deposit-related product paper documents.
+                </p>
+                <div className="mt-4">
+                  <Link href="/product-paper/deposit">
+                    <Button>Open Deposit Product Papers</Button>
+                  </Link>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-brand-black-15 bg-brand-blue-05 p-5">
+                <h2 className="text-lg font-semibold text-brand-blue">Credit</h2>
+                <p className="mt-2 text-sm text-brand-black-75">
+                  View credit-related product paper documents.
+                </p>
+                <div className="mt-4">
+                  <Link href="/product-paper/credit">
+                    <Button>Open Credit Product Papers</Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </PublicPortalLayout>
   );
 }
