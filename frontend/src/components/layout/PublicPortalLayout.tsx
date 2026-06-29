@@ -8,6 +8,7 @@ import {
   FileText,
   HandCoins,
   House,
+  Megaphone,
   Menu,
   PiggyBank,
   ScrollText,
@@ -33,6 +34,8 @@ export function PublicPortalLayout({ children }: { children: ReactNode }) {
   );
   const isPoliciesActive =
     pathname === "/policies" || pathname.startsWith("/policies/");
+  const isCircularsActive =
+    pathname === "/circulars" || pathname.startsWith("/circulars/");
 
   useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
@@ -175,6 +178,18 @@ export function PublicPortalLayout({ children }: { children: ReactNode }) {
                 aria-hidden="true"
               />
             </Link>
+
+            <Link href="/circulars" className={navLinkClass(isCircularsActive)}>
+              <Megaphone className="h-4 w-4" aria-hidden="true" />
+              Circulars
+              <span
+                className={cn(
+                  "absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-white transition-opacity",
+                  isCircularsActive ? "opacity-100" : "opacity-0 group-hover:opacity-70"
+                )}
+                aria-hidden="true"
+              />
+            </Link>
           </nav>
 
           <div className="hidden items-center gap-2 lg:flex">
@@ -269,6 +284,18 @@ export function PublicPortalLayout({ children }: { children: ReactNode }) {
               >
                 <ScrollText className="h-4 w-4" aria-hidden="true" />
                 Policies
+              </Link>
+
+              <Link
+                href="/circulars"
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white hover:bg-white/10",
+                  isCircularsActive && "bg-white/10 font-semibold"
+                )}
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <Megaphone className="h-4 w-4" aria-hidden="true" />
+                Circulars
               </Link>
 
               <div className="mt-2 flex flex-col gap-2 border-t border-white/10 pt-3">
