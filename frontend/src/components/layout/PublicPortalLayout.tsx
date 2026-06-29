@@ -10,6 +10,7 @@ import {
   House,
   Menu,
   PiggyBank,
+  ScrollText,
   ShieldUser,
   UserRound,
   X,
@@ -30,6 +31,8 @@ export function PublicPortalLayout({ children }: { children: ReactNode }) {
   const isProductPaperActive = PRODUCT_PAPER_LINKS.some(
     (item) => pathname === item.href || pathname.startsWith(`${item.href}/`)
   );
+  const isPoliciesActive =
+    pathname === "/policies" || pathname.startsWith("/policies/");
 
   useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
@@ -160,6 +163,18 @@ export function PublicPortalLayout({ children }: { children: ReactNode }) {
                 </div>
               ) : null}
             </div>
+
+            <Link href="/policies" className={navLinkClass(isPoliciesActive)}>
+              <ScrollText className="h-4 w-4" aria-hidden="true" />
+              Policies
+              <span
+                className={cn(
+                  "absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-white transition-opacity",
+                  isPoliciesActive ? "opacity-100" : "opacity-0 group-hover:opacity-70"
+                )}
+                aria-hidden="true"
+              />
+            </Link>
           </nav>
 
           <div className="hidden items-center gap-2 lg:flex">
@@ -243,6 +258,18 @@ export function PublicPortalLayout({ children }: { children: ReactNode }) {
                   </Link>
                 );
               })}
+
+              <Link
+                href="/policies"
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white hover:bg-white/10",
+                  isPoliciesActive && "bg-white/10 font-semibold"
+                )}
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <ScrollText className="h-4 w-4" aria-hidden="true" />
+                Policies
+              </Link>
 
               <div className="mt-2 flex flex-col gap-2 border-t border-white/10 pt-3">
                 <Link
