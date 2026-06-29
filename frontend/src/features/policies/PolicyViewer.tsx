@@ -13,6 +13,8 @@ GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 interface PolicyViewerProps {
   documentId: number;
   title: string;
+  getViewObjectUrl?: (id: number) => Promise<string>;
+  documentLabel?: string;
 }
 
 const MAC_SCREENSHOT_KEYS = new Set(["3", "4", "5", "6"]);
@@ -161,7 +163,12 @@ function PdfPage({
   );
 }
 
-export function PolicyViewer({ documentId, title }: PolicyViewerProps) {
+export function PolicyViewer({
+  documentId,
+  title,
+  getViewObjectUrl = getPolicyViewObjectUrl,
+  documentLabel = "policy",
+}: PolicyViewerProps) {
   const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null);
   const [pageCount, setPageCount] = useState(0);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -218,7 +225,7 @@ export function PolicyViewer({ documentId, title }: PolicyViewerProps) {
       setPageCount(0);
 
       try {
-        objectUrl = await getPolicyViewObjectUrl(documentId);
+        objectUrl = await getViewObjectUrl(documentId);
         const loadingTask = getDocument(objectUrl);
         loadedPdf = await loadingTask.promise;
 
@@ -231,7 +238,7 @@ export function PolicyViewer({ documentId, title }: PolicyViewerProps) {
       } catch (err) {
         if (!isCancelled) {
           setError(
-            err instanceof Error ? err.message : "Unable to load policy PDF."
+            err instanceof Error ? err.message : `Unable to load ${documentLabel} PDF.`
           );
         }
       } finally {
@@ -250,7 +257,7 @@ export function PolicyViewer({ documentId, title }: PolicyViewerProps) {
         URL.revokeObjectURL(objectUrl);
       }
     };
-  }, [documentId]);
+  }, [documentId, getViewObjectUrl, documentLabel]);
 
   useEffect(() => {
     if (isLoading || error) {
@@ -347,7 +354,7 @@ export function PolicyViewer({ documentId, title }: PolicyViewerProps) {
       <div className="flex min-h-[70vh] items-center justify-center rounded-xl border border-brand-black-15 bg-white">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-blue-25 border-t-brand-blue" />
-          <p className="text-sm text-brand-black-75">Loading policy PDF...</p>
+          <p className="text-sm text-brand-black-75">Loading {documentLabel} PDF...</p>
         </div>
       </div>
     );
@@ -385,7 +392,7 @@ export function PolicyViewer({ documentId, title }: PolicyViewerProps) {
             <div className="flex flex-col items-center gap-3 rounded-lg bg-white/90 px-5 py-4 shadow-sm">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-blue-25 border-t-brand-blue" />
               <p className="text-sm text-brand-black-75">
-                {isLoading ? "Loading policy PDF..." : "Rendering PDF preview..."}
+                {isLoading ? `Loading ${documentLabel} PDF...` : "Rendering PDF preview..."}
               </p>
             </div>
           </div>
