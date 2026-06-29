@@ -6,34 +6,45 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ApiError } from "@/lib/api-client";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { createPolicySchema } from "@/features/policies/policy-schema";
-import type { CreatePolicySchemaValues } from "@/features/policies/policy-schema";
+import {
+  createPolicySchema,
+  updatePolicyFormSchema,
+  type CreatePolicySchemaValues,
+  type UpdatePolicySchemaValues,
+} from "@/features/policies/policy-schema";
+
+type PolicyFormValues = CreatePolicySchemaValues | UpdatePolicySchemaValues;
 
 interface PolicyFormProps {
-  defaultValues: CreatePolicySchemaValues;
+  mode: "create" | "edit";
+  defaultValues: PolicyFormValues;
+  currentFileName?: string;
   submitLabel: string;
-  onSubmit: (values: CreatePolicySchemaValues) => Promise<void>;
+  onSubmit: (values: PolicyFormValues) => Promise<void>;
   onCancel: () => void;
 }
 
 export function PolicyForm({
+  mode,
   defaultValues,
+  currentFileName,
   submitLabel,
   onSubmit,
   onCancel,
 }: PolicyFormProps) {
   const [apiError, setApiError] = useState<string | null>(null);
+  const schema = mode === "create" ? createPolicySchema : updatePolicyFormSchema;
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<CreatePolicySchemaValues>({
-    resolver: zodResolver(createPolicySchema),
+  } = useForm<PolicyFormValues>({
+    resolver: zodResolver(schema),
     defaultValues,
   });
 
-  async function handleFormSubmit(values: CreatePolicySchemaValues) {
+  async function handleFormSubmit(values: PolicyFormValues) {
     setApiError(null);
 
     try {
@@ -44,7 +55,11 @@ export function PolicyForm({
         return;
       }
 
-      setApiError("Unable to upload policy. Please try again.");
+      setApiError(
+        mode === "create"
+          ? "Unable to upload policy. Please try again."
+          : "Unable to update policy. Please try again."
+      );
     }
   }
 
@@ -73,6 +88,11 @@ export function PolicyForm({
         >
           PDF Document
         </label>
+        {mode === "edit" && currentFileName ? (
+          <p className="text-sm text-brand-black-75">
+            Current file: <span className="font-medium text-brand-black">{currentFileName}</span>
+          </p>
+        ) : null}
         <input
           id="policy-document"
           type="file"
@@ -86,6 +106,7 @@ export function PolicyForm({
         />
         <p className="text-xs text-brand-black-50">
           Allowed type: PDF only. Maximum file size: 2 MB.
+          {mode === "edit" ? " Leave empty to keep the current PDF." : ""}
         </p>
         {errors.document ? (
           <p className="text-sm text-red-600">{errors.document.message}</p>

@@ -207,6 +207,11 @@ export function AdminPolicyListContent() {
                                   View
                                 </Button>
                               </Link>
+                              <Link href={`/admin/policies/${policy.id}/edit`}>
+                                <Button variant="outline" className="px-3 py-1.5 text-xs">
+                                  Edit
+                                </Button>
+                              </Link>
                               <Button
                                 variant="outline"
                                 className="px-3 py-1.5 text-xs"
@@ -235,6 +240,11 @@ export function AdminPolicyListContent() {
                           <Link href={`/admin/policies/${policy.id}`}>
                             <Button variant="outline" className="px-3 py-1.5 text-xs">
                               View
+                            </Button>
+                          </Link>
+                          <Link href={`/admin/policies/${policy.id}/edit`}>
+                            <Button variant="outline" className="px-3 py-1.5 text-xs">
+                              Edit
                             </Button>
                           </Link>
                           <Button

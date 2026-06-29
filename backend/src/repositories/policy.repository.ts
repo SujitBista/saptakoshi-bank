@@ -33,6 +33,13 @@ export interface CreatePolicyInput {
   uploadedBy: number;
 }
 
+export interface UpdatePolicyInput {
+  title: string;
+  fileName?: string;
+  filePath?: string;
+  fileSize?: number;
+}
+
 const defaultExecutor: DbExecutor = { query };
 
 const DETAIL_SELECT_COLUMNS = `
@@ -153,6 +160,36 @@ export async function create(
   );
 
   return rows[0];
+}
+
+export async function update(
+  id: number,
+  input: UpdatePolicyInput,
+  executor: DbExecutor = defaultExecutor
+): Promise<PolicyDetailRow | null> {
+  const rows = await executor.query<{ id: number }>(
+    `UPDATE policies
+     SET title = $2,
+         file_name = COALESCE($3, file_name),
+         file_path = COALESCE($4, file_path),
+         file_size = COALESCE($5, file_size),
+         updated_at = NOW()
+     WHERE id = $1
+     RETURNING id`,
+    [
+      id,
+      input.title,
+      input.fileName ?? null,
+      input.filePath ?? null,
+      input.fileSize ?? null,
+    ]
+  );
+
+  if (!rows[0]) {
+    return null;
+  }
+
+  return findById(id, executor);
 }
 
 export async function remove(
