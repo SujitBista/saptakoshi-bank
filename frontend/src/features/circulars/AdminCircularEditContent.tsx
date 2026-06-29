@@ -81,7 +81,7 @@ export function AdminCircularEditContent({ id }: { id: number }) {
                   await updateCircular(id, values);
                   router.push(`/admin/circulars/${id}`);
                 }}
-                onCancel={() => router.push(`/admin/circulars/${id}`)}
+                onCancel={() => router.push("/admin/circulars")}
               />
             ) : null}
           </CardContent>
