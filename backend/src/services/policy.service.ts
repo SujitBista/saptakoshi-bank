@@ -55,6 +55,13 @@ export interface CreatePolicyPayload {
   file?: Express.Multer.File;
 }
 
+export interface UpdatePolicyPayload {
+  authenticatedUser: AuthenticatedUser;
+  id: number;
+  title?: string;
+  file?: Express.Multer.File;
+}
+
 export interface PolicyFileResult {
   absoluteFilePath: string;
   mimeType: string;
@@ -103,11 +110,7 @@ function sanitizeFileBaseName(originalFileName: string): string {
   return sanitized || "policy";
 }
 
-function ensureAllowedFile(file?: Express.Multer.File): Express.Multer.File {
-  if (!file) {
-    throw new PolicyError("PDF document is required");
-  }
-
+function validatePdfFile(file: Express.Multer.File): void {
   const extension = path.extname(file.originalname).toLowerCase();
 
   if (extension !== ".pdf" || (file.mimetype && !ALLOWED_MIME_TYPES.has(file.mimetype))) {
@@ -117,7 +120,23 @@ function ensureAllowedFile(file?: Express.Multer.File): Express.Multer.File {
   if (file.size > MAX_FILE_SIZE_BYTES) {
     throw new PolicyError("File size must be 2 MB or less");
   }
+}
 
+function ensureAllowedFile(file?: Express.Multer.File): Express.Multer.File {
+  if (!file) {
+    throw new PolicyError("PDF document is required");
+  }
+
+  validatePdfFile(file);
+  return file;
+}
+
+function ensureOptionalAllowedFile(file?: Express.Multer.File): Express.Multer.File | undefined {
+  if (!file) {
+    return undefined;
+  }
+
+  validatePdfFile(file);
   return file;
 }
 
@@ -282,6 +301,83 @@ export async function createPolicy(
           "Unable to store uploaded file. Check server upload directory permissions.",
           500
         );
+      }
+
+      throw error;
+    }
+  });
+}
+
+export async function updatePolicy(
+  payload: UpdatePolicyPayload
+): Promise<PolicyDto> {
+  await getActiveAdminUser(payload.authenticatedUser);
+  const existing = await getPolicyByIdOrThrow(payload.id);
+  const title = sanitizeText(payload.title, "Title", 255, true) as string;
+  const file = ensureOptionalAllowedFile(payload.file);
+  const uploadDir = getUploadDir();
+  const previousAbsoluteFilePath = getAbsoluteFilePath(existing.file_path);
+
+  let nextAbsoluteFilePath: string | null = null;
+  let nextRelativeFilePath: string | undefined;
+  let nextFileName: string | undefined;
+  let nextFileSize: number | undefined;
+
+  if (file) {
+    const timestamp = Date.now();
+    const cleanBaseName = sanitizeFileBaseName(file.originalname);
+    const storedFileName = `policy-${timestamp}-${cleanBaseName}.pdf`;
+    nextRelativeFilePath = storedFileName;
+    nextAbsoluteFilePath = path.join(uploadDir, storedFileName);
+    nextFileName = file.originalname;
+    nextFileSize = file.size;
+
+    ensurePathInsideRoot(uploadDir, nextAbsoluteFilePath);
+  }
+
+  return withTransaction(async (executor) => {
+    if (file && nextAbsoluteFilePath) {
+      await fs.mkdir(uploadDir, { recursive: true });
+
+      try {
+        await fs.writeFile(nextAbsoluteFilePath, file.buffer);
+      } catch (error) {
+        const errno = (error as NodeJS.ErrnoException | undefined)?.code;
+        if (errno === "EACCES" || errno === "EPERM" || errno === "ENOENT") {
+          throw new PolicyError(
+            "Unable to store uploaded file. Check server upload directory permissions.",
+            500
+          );
+        }
+
+        throw error;
+      }
+    }
+
+    try {
+      const updated = await policyRepository.update(
+        payload.id,
+        {
+          title,
+          fileName: nextFileName,
+          filePath: nextRelativeFilePath,
+          fileSize: nextFileSize,
+        },
+        executor
+      );
+
+      if (!updated) {
+        throw new PolicyError("Policy not found", 404);
+      }
+
+      if (nextAbsoluteFilePath && nextAbsoluteFilePath !== previousAbsoluteFilePath) {
+        await fs.unlink(previousAbsoluteFilePath).catch(() => undefined);
+      }
+
+      return toPolicyDto(updated);
+    } catch (error) {
+      if (nextAbsoluteFilePath) {
+        await fs.unlink(nextAbsoluteFilePath).catch(() => undefined);
       }
 
       throw error;

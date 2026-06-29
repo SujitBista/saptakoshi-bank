@@ -50,9 +50,12 @@ export function AdminPolicyViewContent({ id }: { id: number }) {
     <AdminLayout userEmail={user.email} userRole={user.role} onLogout={handleLogout}>
       <div className="mx-auto max-w-6xl">
         {policy ? (
-          <div className="mb-4 flex justify-end">
+          <div className="mb-4 flex justify-end gap-2">
             <Link href="/admin/policies">
               <Button variant="outline">Back to List</Button>
+            </Link>
+            <Link href={`/admin/policies/${policy.id}/edit`}>
+              <Button>Edit Policy</Button>
             </Link>
           </div>
         ) : null}

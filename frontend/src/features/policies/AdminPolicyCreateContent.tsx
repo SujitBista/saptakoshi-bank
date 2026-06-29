@@ -35,6 +35,7 @@ export function AdminPolicyCreateContent() {
           />
           <CardContent>
             <PolicyForm
+              mode="create"
               defaultValues={defaultValues}
               submitLabel="Upload Policy"
               onSubmit={async (values) => {

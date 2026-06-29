@@ -9,6 +9,7 @@ import {
   getPolicyById,
   getPolicyFile,
   listPolicies,
+  updatePolicy,
 } from "../services/policy.service";
 
 function parsePositiveInt(
@@ -115,6 +116,32 @@ export async function postPolicy(req: Request, res: Response): Promise<void> {
     res.status(201).json({ policy });
   } catch (error) {
     handlePolicyError(error, res, "Policy upload failed");
+  }
+}
+
+export async function putPolicy(req: Request, res: Response): Promise<void> {
+  if (!req.user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const id = parseId(req.params.id);
+  if (!id) {
+    res.status(400).json({ error: "Invalid policy id" });
+    return;
+  }
+
+  try {
+    const policy = await updatePolicy({
+      authenticatedUser: req.user,
+      id,
+      title: typeof req.body.title === "string" ? req.body.title : undefined,
+      file: req.file,
+    });
+
+    res.json({ policy });
+  } catch (error) {
+    handlePolicyError(error, res, "Unable to update policy");
   }
 }
 

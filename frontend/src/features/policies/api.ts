@@ -55,6 +55,23 @@ export async function createPolicy(values: PolicyFormValues): Promise<Policy> {
   return response.policy;
 }
 
+export async function updatePolicy(id: number, values: PolicyFormValues): Promise<Policy> {
+  const formData = new FormData();
+  formData.set("title", values.title.trim());
+
+  if (values.document?.[0]) {
+    formData.set("document", values.document[0]);
+  }
+
+  const response = await apiClient<PolicyResponse>(`/api/admin/policies/${id}`, {
+    method: "PUT",
+    body: formData,
+    token: getToken(),
+  });
+
+  return response.policy;
+}
+
 export async function deletePolicy(id: number): Promise<void> {
   await apiClient<void>(`/api/admin/policies/${id}`, {
     method: "DELETE",
@@ -96,4 +113,10 @@ export function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+export function policyToFormValues(policy: Policy): PolicyFormValues {
+  return {
+    title: policy.title,
+  };
 }
