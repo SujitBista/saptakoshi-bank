@@ -144,18 +144,18 @@ export function AccountOpeningDocumentViewContent({
                   </div>
                 ) : null}
 
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-brand-blue">
+                    Uploaded Document
+                  </p>
+                  <AccountOpeningDocumentPdfViewer documentId={document.id} />
+                </div>
+
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <DetailItem label="Status" value={document.status} />
-                  <DetailItem label="Document No." value={document.documentNo} />
-                  <DetailItem label="Client Code" value={document.clientCode} />
-                  <DetailItem label="First Name" value={document.firstName} />
-                  <DetailItem label="Last Name" value={document.lastName} />
                   <DetailItem
                     label="Father Name"
                     value={document.fatherName || "—"}
                   />
-                  <DetailItem label="Citizen No." value={document.citizenNo} />
-                  <DetailItem label="Mobile Number" value={document.mobileNumber} />
                   <DetailItem label="Branch Code" value={document.branchCode} />
                   <DetailItem label="Branch Name" value={document.branchName} />
                   <DetailItem
@@ -165,10 +165,6 @@ export function AccountOpeningDocumentViewContent({
                   <DetailItem
                     label="File Size"
                     value={formatFileSize(document.fileSize)}
-                  />
-                  <DetailItem
-                    label="Uploaded Date"
-                    value={formatDocumentDate(document.createdAt)}
                   />
                   <DetailItem
                     label="Last Updated"
@@ -186,21 +182,6 @@ export function AccountOpeningDocumentViewContent({
                       />
                     </>
                   ) : null}
-                  {document.rejectionRemarks ? (
-                    <div className="sm:col-span-2">
-                      <DetailItem
-                        label="Rejection Remarks"
-                        value={document.rejectionRemarks}
-                      />
-                    </div>
-                  ) : null}
-                </div>
-
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-brand-blue">
-                    Uploaded Document
-                  </p>
-                  <AccountOpeningDocumentPdfViewer documentId={document.id} />
                 </div>
               </div>
             )}
