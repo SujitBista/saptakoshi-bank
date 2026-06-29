@@ -16,7 +16,7 @@ const DEFAULT_VALUES: UserFormValues = {
   email: "",
   password: "",
   branchId: "",
-  role: "EMPLOYEE",
+  role: "MAKER",
   status: "active",
 };
 

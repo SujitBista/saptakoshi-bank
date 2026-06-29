@@ -25,7 +25,7 @@ function getNavigationItems(userRole?: string): NavigationItem[] {
     { href: "/dashboard", label: "Dashboard" },
   ];
 
-  if (userRole === USER_ROLES.BRANCH_MANAGER) {
+  if (userRole === USER_ROLES.CHECKER) {
     items.push({
       href: "/dashboard/document-review",
       label: "Document Review",
@@ -34,7 +34,7 @@ function getNavigationItems(userRole?: string): NavigationItem[] {
     return items;
   }
 
-  if (userRole === USER_ROLES.EMPLOYEE) {
+  if (userRole === USER_ROLES.MAKER) {
     items.push({
       href: "/dashboard/account-opening-upload",
       label: "Account Opening",

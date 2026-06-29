@@ -4,7 +4,7 @@ VALUES (
   'ram',
   'ram@saptakoshi.com',
   '$2b$10$dNrq3jyfwkzQrjTC.Xijyu8WzuLMnhiYa/NTsl9xKtWjpjLHFEWey',
-  'EMPLOYEE',
+  'MAKER',
   (SELECT id FROM branches WHERE branch_code = 'BRT001'),
   true
 )
@@ -22,7 +22,7 @@ VALUES (
   'inactive',
   'inactive@saptakoshi.com',
   '$2b$10$dNrq3jyfwkzQrjTC.Xijyu8WzuLMnhiYa/NTsl9xKtWjpjLHFEWey',
-  'EMPLOYEE',
+  'MAKER',
   (SELECT id FROM branches WHERE branch_code = 'BRT001'),
   false
 )
@@ -36,11 +36,11 @@ ON CONFLICT (email) DO UPDATE SET
 
 INSERT INTO users (full_name, username, email, password_hash, role, branch_id, is_active)
 VALUES (
-  'Branch Manager One',
-  'manager1',
-  'manager1@saptakoshi.com',
+  'Checker One',
+  'checker1',
+  'checker1@saptakoshi.com',
   '$2b$10$dNrq3jyfwkzQrjTC.Xijyu8WzuLMnhiYa/NTsl9xKtWjpjLHFEWey',
-  'BRANCH_MANAGER',
+  'CHECKER',
   (SELECT id FROM branches WHERE branch_code = 'BRT001'),
   true
 )
@@ -54,11 +54,11 @@ ON CONFLICT (email) DO UPDATE SET
 
 INSERT INTO users (full_name, username, email, password_hash, role, branch_id, is_active)
 VALUES (
-  'Branch Manager Two',
-  'manager2',
-  'manager2@saptakoshi.com',
+  'Checker Two',
+  'checker2',
+  'checker2@saptakoshi.com',
   '$2b$10$dNrq3jyfwkzQrjTC.Xijyu8WzuLMnhiYa/NTsl9xKtWjpjLHFEWey',
-  'BRANCH_MANAGER',
+  'CHECKER',
   (SELECT id FROM branches WHERE branch_code = 'BRT001'),
   true
 )

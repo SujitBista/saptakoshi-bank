@@ -2,10 +2,10 @@
 
 import { UserLayout } from "@/components/layout/UserLayout";
 import { DocumentReviewList } from "@/features/account-opening/DocumentReviewList";
-import { useBranchManagerAuth } from "@/hooks/useUserAuth";
+import { useCheckerAuth } from "@/hooks/useUserAuth";
 
 export function DocumentReviewContent() {
-  const { user, isReady, handleLogout } = useBranchManagerAuth();
+  const { user, isReady, handleLogout } = useCheckerAuth();
 
   if (!isReady || !user) {
     return (

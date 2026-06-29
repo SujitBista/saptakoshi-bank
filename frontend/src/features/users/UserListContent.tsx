@@ -42,8 +42,8 @@ const SEARCH_DEBOUNCE_MS = 300;
 const ROLE_FILTER_OPTIONS = [
   { value: "", label: "All roles" },
   { value: "ADMIN", label: "Admin" },
-  { value: "EMPLOYEE", label: "Employee" },
-  { value: "BRANCH_MANAGER", label: "Branch Manager" },
+  { value: "MAKER", label: "Maker" },
+  { value: "CHECKER", label: "Checker" },
 ];
 
 const STATUS_FILTER_OPTIONS = [
@@ -54,8 +54,8 @@ const STATUS_FILTER_OPTIONS = [
 
 const ROLE_BADGE_LABELS: Record<string, string> = {
   ADMIN: "Admin",
-  EMPLOYEE: "Employee",
-  BRANCH_MANAGER: "Branch Mgr",
+  MAKER: "Maker",
+  CHECKER: "Checker",
 };
 
 const ROLE_BADGE_VARIANTS: Record<
@@ -63,8 +63,8 @@ const ROLE_BADGE_VARIANTS: Record<
   "info" | "neutral" | "warning"
 > = {
   ADMIN: "warning",
-  EMPLOYEE: "neutral",
-  BRANCH_MANAGER: "info",
+  MAKER: "neutral",
+  CHECKER: "info",
 };
 
 const compactTableCellClass = "px-3 py-2 text-sm";
@@ -214,7 +214,7 @@ export function UserListContent() {
 
   function canTransferUser(targetUser: User): boolean {
     return (
-      targetUser.role === "EMPLOYEE" || targetUser.role === "BRANCH_MANAGER"
+      targetUser.role === "MAKER" || targetUser.role === "CHECKER"
     );
   }
 

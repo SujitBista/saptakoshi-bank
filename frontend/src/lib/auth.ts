@@ -75,7 +75,7 @@ export function getDashboardPathForRole(role: string): string {
     return "/admin/dashboard";
   }
 
-  if (normalizedRole === USER_ROLES.BRANCH_MANAGER) {
+  if (normalizedRole === USER_ROLES.CHECKER) {
     return "/dashboard/document-review";
   }
 

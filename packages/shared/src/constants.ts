@@ -4,17 +4,23 @@ export const API_VERSION = "v1";
 
 export const USER_ROLES = {
   ADMIN: "ADMIN",
-  EMPLOYEE: "EMPLOYEE",
-  BRANCH_MANAGER: "BRANCH_MANAGER",
+  MAKER: "MAKER",
+  CHECKER: "CHECKER",
 } as const;
 
 export type UserRole = (typeof USER_ROLES)[keyof typeof USER_ROLES];
 
 const LEGACY_USER_ROLE = "USER";
+const LEGACY_EMPLOYEE_ROLE = "EMPLOYEE";
+const LEGACY_BRANCH_MANAGER_ROLE = "BRANCH_MANAGER";
 
 export function normalizeUserRole(role: string): UserRole {
-  if (role === LEGACY_USER_ROLE) {
-    return USER_ROLES.EMPLOYEE;
+  if (role === LEGACY_USER_ROLE || role === LEGACY_EMPLOYEE_ROLE) {
+    return USER_ROLES.MAKER;
+  }
+
+  if (role === LEGACY_BRANCH_MANAGER_ROLE) {
+    return USER_ROLES.CHECKER;
   }
 
   return role as UserRole;
@@ -28,3 +34,11 @@ export const DOCUMENT_STATUSES = {
 
 export type DocumentStatus =
   (typeof DOCUMENT_STATUSES)[keyof typeof DOCUMENT_STATUSES];
+
+export const PRODUCT_PAPER_CATEGORIES = {
+  DEPOSIT: "DEPOSIT",
+  CREDIT: "CREDIT",
+} as const;
+
+export type ProductPaperCategory =
+  (typeof PRODUCT_PAPER_CATEGORIES)[keyof typeof PRODUCT_PAPER_CATEGORIES];

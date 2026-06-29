@@ -14,7 +14,7 @@ import type {
   AccountOpeningDocument,
   AccountOpeningEditFormValues,
 } from "@/features/account-opening/types";
-import { useEmployeeAuth } from "@/hooks/useUserAuth";
+import { useMakerAuth } from "@/hooks/useUserAuth";
 import { ApiError } from "@/lib/api-client";
 
 interface AccountOpeningDocumentEditContentProps {
@@ -25,7 +25,7 @@ export function AccountOpeningDocumentEditContent({
   documentId,
 }: AccountOpeningDocumentEditContentProps) {
   const router = useRouter();
-  const { user, isReady, handleLogout } = useEmployeeAuth();
+  const { user, isReady, handleLogout } = useMakerAuth();
   const [document, setDocument] = useState<AccountOpeningDocument | null>(null);
   const [error, setError] = useState<string | null>(null);
 

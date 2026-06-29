@@ -26,7 +26,7 @@ const branchManager: userRepository.UserWithBranchRow = {
   username: "shyam",
   email: "shyam@saptakoshi.com",
   password_hash: "secret",
-  role: USER_ROLES.BRANCH_MANAGER,
+  role: USER_ROLES.CHECKER,
   is_active: true,
   created_at: new Date("2026-06-18T00:00:00.000Z"),
   updated_at: new Date("2026-06-18T00:00:00.000Z"),
@@ -40,7 +40,7 @@ const employee: userRepository.UserWithBranchRow = {
   full_name: "Ram Sharma",
   username: "ram",
   email: "ram@saptakoshi.com",
-  role: USER_ROLES.EMPLOYEE,
+  role: USER_ROLES.MAKER,
 };
 
 const adminUser: userRepository.UserWithBranchRow = {
@@ -130,7 +130,7 @@ describe("transferUserBranch", () => {
     );
     expect(result.branchId).toBe(5);
     expect(result.branchCode).toBe("BRT005");
-    expect(result.role).toBe(USER_ROLES.BRANCH_MANAGER);
+    expect(result.role).toBe(USER_ROLES.CHECKER);
     expect(result.email).toBe(branchManager.email);
   });
 
@@ -159,7 +159,7 @@ describe("transferUserBranch", () => {
 
     const result = await transferUserBranch(employee.id, { branchId: 5 }, 1);
 
-    expect(result.role).toBe(USER_ROLES.EMPLOYEE);
+    expect(result.role).toBe(USER_ROLES.MAKER);
     expect(result.username).toBe(employee.username);
     expect(result.email).toBe(employee.email);
     expect(result.branchId).toBe(5);
@@ -186,7 +186,7 @@ describe("transferUserBranch", () => {
     ).rejects.toEqual(
       expect.objectContaining({
         message:
-          "Only employees and branch managers can be transferred between branches",
+          "Only makers and checkers can be transferred between branches",
       })
     );
   });

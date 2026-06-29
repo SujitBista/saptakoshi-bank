@@ -1,4 +1,4 @@
-import { USER_ROLES } from "@saptakoshi/shared";
+import { USER_ROLES, normalizeUserRole } from "@saptakoshi/shared";
 import { hashPassword } from "../auth/password";
 import { withTransaction } from "../config/database";
 import * as branchRepository from "../repositories/branch.repository";
@@ -93,11 +93,11 @@ function normalizeRole(role: string): string {
 }
 
 function validateRole(role: string): string {
-  const normalized = normalizeRole(role);
+  const normalized = normalizeUserRole(normalizeRole(role));
   const allowedRoles = new Set<string>(Object.values(USER_ROLES));
 
   if (!allowedRoles.has(normalized)) {
-    throw new UserError("Role must be ADMIN, EMPLOYEE, or BRANCH_MANAGER");
+    throw new UserError("Role must be ADMIN, MAKER, or CHECKER");
   }
 
   return normalized;
@@ -132,7 +132,7 @@ async function validateBranchForRole(
   role: string,
   branchId: number | null | undefined
 ): Promise<number | null> {
-  if (role === USER_ROLES.EMPLOYEE || role === USER_ROLES.BRANCH_MANAGER) {
+  if (role === USER_ROLES.MAKER || role === USER_ROLES.CHECKER) {
     if (branchId === undefined || branchId === null) {
       throw new UserError(`Branch is required for ${role} role`);
     }
@@ -248,7 +248,7 @@ export async function createUser(payload: CreateUserPayload): Promise<UserDto> {
   const email = validateEmail(payload.email ?? "");
   await ensureUniqueEmail(email);
 
-  const role = validateRole(payload.role ?? USER_ROLES.EMPLOYEE);
+  const role = validateRole(payload.role ?? USER_ROLES.MAKER);
   const branchId = await validateBranchForRole(role, payload.branchId ?? null);
   const password = validatePassword(payload.password, "Temporary password");
   const passwordHash = await hashPassword(password);
@@ -337,11 +337,11 @@ export async function transferUserBranch(
   }
 
   if (
-    existing.role !== USER_ROLES.EMPLOYEE &&
-    existing.role !== USER_ROLES.BRANCH_MANAGER
+    existing.role !== USER_ROLES.MAKER &&
+    existing.role !== USER_ROLES.CHECKER
   ) {
     throw new UserError(
-      "Only employees and branch managers can be transferred between branches"
+      "Only makers and checkers can be transferred between branches"
     );
   }
 

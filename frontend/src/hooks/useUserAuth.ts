@@ -4,7 +4,7 @@ import type { UserRole } from "@saptakoshi/shared";
 import { USER_ROLES } from "@saptakoshi/shared";
 import { useAuth } from "@/hooks/useAuth";
 
-const STAFF_ROLES: UserRole[] = [USER_ROLES.EMPLOYEE, USER_ROLES.BRANCH_MANAGER];
+const STAFF_ROLES: UserRole[] = [USER_ROLES.MAKER, USER_ROLES.CHECKER];
 
 export function useStaffAuth() {
   return useAuth({
@@ -14,23 +14,23 @@ export function useStaffAuth() {
   });
 }
 
-export function useEmployeeAuth() {
+export function useMakerAuth() {
   return useAuth({
-    requiredRole: USER_ROLES.EMPLOYEE,
+    requiredRole: USER_ROLES.MAKER,
     loginPath: "/login",
     forbiddenPath: "/dashboard",
   });
 }
 
-export function useBranchManagerAuth() {
+export function useCheckerAuth() {
   return useAuth({
-    requiredRole: USER_ROLES.BRANCH_MANAGER,
+    requiredRole: USER_ROLES.CHECKER,
     loginPath: "/login",
     forbiddenPath: "/dashboard",
   });
 }
 
-export function useDocumentReviewerAuth(variant: "branch-manager" | "admin") {
+export function useDocumentReviewerAuth(variant: "checker" | "admin") {
   return useAuth(
     variant === "admin"
       ? {
@@ -39,7 +39,7 @@ export function useDocumentReviewerAuth(variant: "branch-manager" | "admin") {
           forbiddenPath: "/dashboard",
         }
       : {
-          requiredRole: USER_ROLES.BRANCH_MANAGER,
+          requiredRole: USER_ROLES.CHECKER,
           loginPath: "/login",
           forbiddenPath: "/dashboard",
         }

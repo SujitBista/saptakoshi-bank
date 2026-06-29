@@ -292,7 +292,7 @@ function resolveListFilters(
     status?: string;
   }
 ): { branchId?: number; uploadedBy?: number; status?: string } {
-  if (currentUser.role === USER_ROLES.EMPLOYEE) {
+  if (currentUser.role === USER_ROLES.MAKER) {
     if (!currentUser.branch_id) {
       throw new AccountOpeningDocumentError("Assigned branch is required");
     }
@@ -304,7 +304,7 @@ function resolveListFilters(
     };
   }
 
-  if (currentUser.role === USER_ROLES.BRANCH_MANAGER) {
+  if (currentUser.role === USER_ROLES.CHECKER) {
     if (!currentUser.branch_id) {
       throw new AccountOpeningDocumentError("Assigned branch is required");
     }
@@ -329,7 +329,7 @@ function assertDocumentAccess(
     return;
   }
 
-  if (currentUser.role === USER_ROLES.EMPLOYEE) {
+  if (currentUser.role === USER_ROLES.MAKER) {
     if (document.uploaded_by !== currentUser.id) {
       throw new AccountOpeningDocumentError("Forbidden", 403);
     }
@@ -337,7 +337,7 @@ function assertDocumentAccess(
     return;
   }
 
-  if (currentUser.role === USER_ROLES.BRANCH_MANAGER) {
+  if (currentUser.role === USER_ROLES.CHECKER) {
     if (!currentUser.branch_id || document.branch_id !== currentUser.branch_id) {
       throw new AccountOpeningDocumentError(
         "Document is not in your assigned branch",
@@ -357,12 +357,12 @@ function assertCanReviewDocument(
 ): void {
   if (
     currentUser.role !== USER_ROLES.ADMIN &&
-    currentUser.role !== USER_ROLES.BRANCH_MANAGER
+    currentUser.role !== USER_ROLES.CHECKER
   ) {
     throw new AccountOpeningDocumentError("Forbidden", 403);
   }
 
-  if (currentUser.role === USER_ROLES.BRANCH_MANAGER) {
+  if (currentUser.role === USER_ROLES.CHECKER) {
     if (!currentUser.branch_id || document.branch_id !== currentUser.branch_id) {
       throw new AccountOpeningDocumentError(
         "Document is not in your assigned branch",
@@ -376,7 +376,7 @@ function assertCanUpload(
   currentUser: userRepository.UserWithBranchRow
 ): void {
   if (
-    currentUser.role !== USER_ROLES.EMPLOYEE &&
+    currentUser.role !== USER_ROLES.MAKER &&
     currentUser.role !== USER_ROLES.ADMIN
   ) {
     throw new AccountOpeningDocumentError("Forbidden", 403);
@@ -391,7 +391,7 @@ function assertCanUpdate(
     return;
   }
 
-  if (currentUser.role === USER_ROLES.EMPLOYEE) {
+  if (currentUser.role === USER_ROLES.MAKER) {
     if (document.uploaded_by !== currentUser.id) {
       throw new AccountOpeningDocumentError("Forbidden", 403);
     }
@@ -450,7 +450,7 @@ async function resolveBranchForUpload(
   currentUser: userRepository.UserWithBranchRow,
   branchIdValue?: string
 ): Promise<branchRepository.BranchRow> {
-  if (currentUser.role === USER_ROLES.EMPLOYEE) {
+  if (currentUser.role === USER_ROLES.MAKER) {
     if (!currentUser.branch_id || !currentUser.branch_code) {
       throw new AccountOpeningDocumentError("Assigned branch is required for uploads");
     }
@@ -727,7 +727,7 @@ export async function updateAccountOpeningDocument(
   );
 
   const isResubmit =
-    currentUser.role === USER_ROLES.EMPLOYEE &&
+    currentUser.role === USER_ROLES.MAKER &&
     document.status === DOCUMENT_STATUSES.REJECTED;
 
   const updated = await withTransaction(async (executor) => {

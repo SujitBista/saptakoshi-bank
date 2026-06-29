@@ -14,8 +14,8 @@ import {
 import type { BranchOption, UserFormValues } from "@/features/users/types";
 
 const ROLE_OPTIONS = [
-  { value: "EMPLOYEE", label: "Employee" },
-  { value: "BRANCH_MANAGER", label: "Branch Manager" },
+  { value: "MAKER", label: "Maker" },
+  { value: "CHECKER", label: "Checker" },
   { value: "ADMIN", label: "Admin" },
 ];
 

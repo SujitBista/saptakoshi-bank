@@ -14,7 +14,7 @@ import {
   formatFileSize,
 } from "@/features/account-opening/api";
 import type { AccountOpeningDocument } from "@/features/account-opening/types";
-import { useEmployeeAuth } from "@/hooks/useUserAuth";
+import { useMakerAuth } from "@/hooks/useUserAuth";
 import { ApiError } from "@/lib/api-client";
 
 interface AccountOpeningDocumentViewContentProps {
@@ -24,7 +24,7 @@ interface AccountOpeningDocumentViewContentProps {
 export function AccountOpeningDocumentViewContent({
   documentId,
 }: AccountOpeningDocumentViewContentProps) {
-  const { user, isReady, handleLogout } = useEmployeeAuth();
+  const { user, isReady, handleLogout } = useMakerAuth();
   const [document, setDocument] = useState<AccountOpeningDocument | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);

@@ -23,12 +23,12 @@ import { ApiError } from "@/lib/api-client";
 
 interface DocumentReviewViewContentProps {
   documentId: number;
-  variant?: "branch-manager" | "admin";
+  variant?: "checker" | "admin";
 }
 
 export function DocumentReviewViewContent({
   documentId,
-  variant = "branch-manager",
+  variant = "checker",
 }: DocumentReviewViewContentProps) {
   const router = useRouter();
   const { user, isReady, handleLogout } = useDocumentReviewerAuth(variant);
@@ -126,7 +126,7 @@ export function DocumentReviewViewContent({
     variant === "admin" ? "/admin/document-review" : "/dashboard/document-review";
   const canReview =
     document?.status === DOCUMENT_STATUSES.PENDING &&
-    (user.role === USER_ROLES.BRANCH_MANAGER || user.role === USER_ROLES.ADMIN);
+    (user.role === USER_ROLES.CHECKER || user.role === USER_ROLES.ADMIN);
   const pageTitle = canReview ? "Review Document" : "View Document";
   const pageDescription = canReview
     ? "Approve or reject this account opening document"

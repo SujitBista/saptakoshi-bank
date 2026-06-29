@@ -46,7 +46,7 @@ const currentEmployee: userRepository.UserWithBranchRow = {
   username: "ram",
   email: "ram@saptakoshi.com",
   password_hash: "secret",
-  role: USER_ROLES.EMPLOYEE,
+  role: USER_ROLES.MAKER,
   is_active: true,
   created_at: new Date("2026-06-18T00:00:00.000Z"),
   updated_at: new Date("2026-06-18T00:00:00.000Z"),
@@ -61,7 +61,7 @@ const branchManagerOne: userRepository.UserWithBranchRow = {
   username: "manager1",
   email: "manager1@saptakoshi.com",
   password_hash: "secret",
-  role: USER_ROLES.BRANCH_MANAGER,
+  role: USER_ROLES.CHECKER,
   is_active: true,
   created_at: new Date("2026-06-18T00:00:00.000Z"),
   updated_at: new Date("2026-06-18T00:00:00.000Z"),
@@ -125,21 +125,21 @@ const documentRow: accountOpeningDocumentRepository.AccountOpeningDocumentDetail
 const employeeAuthUser = {
   id: 7,
   email: "ram@saptakoshi.com",
-  role: USER_ROLES.EMPLOYEE,
+  role: USER_ROLES.MAKER,
   branch_id: 1,
 };
 
 const branchManagerAuthUser = {
   id: 21,
   email: "manager1@saptakoshi.com",
-  role: USER_ROLES.BRANCH_MANAGER,
+  role: USER_ROLES.CHECKER,
   branch_id: 1,
 };
 
 const branchManagerTwoAuthUser = {
   id: 22,
   email: "manager2@saptakoshi.com",
-  role: USER_ROLES.BRANCH_MANAGER,
+  role: USER_ROLES.CHECKER,
   branch_id: 1,
 };
 
@@ -306,7 +306,7 @@ describe("account-opening-document.service", () => {
 
     await expect(
       getAccountOpeningDocumentById(
-        { id: 99, email: "other@saptakoshi.com", role: USER_ROLES.EMPLOYEE, branch_id: 1 },
+        { id: 99, email: "other@saptakoshi.com", role: USER_ROLES.MAKER, branch_id: 1 },
         11
       )
     ).rejects.toThrow(new AccountOpeningDocumentError("Forbidden", 403));
@@ -347,7 +347,7 @@ describe("account-opening-document.service", () => {
         {
           id: transferredManager.id,
           email: transferredManager.email,
-          role: USER_ROLES.BRANCH_MANAGER,
+          role: USER_ROLES.CHECKER,
           branch_id: 5,
         },
         11
@@ -383,7 +383,7 @@ describe("account-opening-document.service", () => {
       {
         id: transferredManager.id,
         email: transferredManager.email,
-        role: USER_ROLES.BRANCH_MANAGER,
+        role: USER_ROLES.CHECKER,
         branch_id: 5,
       },
       11
@@ -418,7 +418,7 @@ describe("account-opening-document.service", () => {
         {
           id: transferredManager.id,
           email: transferredManager.email,
-          role: USER_ROLES.BRANCH_MANAGER,
+          role: USER_ROLES.CHECKER,
           branch_id: 5,
         },
         11
