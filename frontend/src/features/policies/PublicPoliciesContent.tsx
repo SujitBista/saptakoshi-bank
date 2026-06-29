@@ -22,7 +22,6 @@ import {
 } from "@/components/ui/Table";
 import {
   fetchPolicies,
-  formatFileSize,
   formatPolicyDate,
 } from "@/features/policies/api";
 import {
@@ -148,7 +147,6 @@ export function PublicPoliciesContent() {
                     <TableHead>
                       <TableRow>
                         <TableHeaderCell>Title</TableHeaderCell>
-                        <TableHeaderCell>File Size</TableHeaderCell>
                         <TableHeaderCell>Updated</TableHeaderCell>
                         <TableHeaderCell>Actions</TableHeaderCell>
                       </TableRow>
@@ -159,7 +157,6 @@ export function PublicPoliciesContent() {
                           <TableCell className="max-w-md whitespace-normal font-medium text-brand-blue">
                             {policy.title}
                           </TableCell>
-                          <TableCell>{formatFileSize(policy.fileSize)}</TableCell>
                           <TableCell>{formatPolicyDate(policy.updatedAt)}</TableCell>
                           <TableCell>
                             <Link href={`/policies/view/${policy.id}`}>
@@ -187,10 +184,6 @@ export function PublicPoliciesContent() {
                         </Link>
                       }
                     >
-                      <DataListCardField
-                        label="File Size"
-                        value={formatFileSize(policy.fileSize)}
-                      />
                       <DataListCardField
                         label="Updated"
                         value={formatPolicyDate(policy.updatedAt)}
