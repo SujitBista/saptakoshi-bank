@@ -28,3 +28,11 @@ export const DOCUMENT_STATUSES = {
 
 export type DocumentStatus =
   (typeof DOCUMENT_STATUSES)[keyof typeof DOCUMENT_STATUSES];
+
+export const PRODUCT_PAPER_CATEGORIES = {
+  DEPOSIT: "DEPOSIT",
+  CREDIT: "CREDIT",
+} as const;
+
+export type ProductPaperCategory =
+  (typeof PRODUCT_PAPER_CATEGORIES)[keyof typeof PRODUCT_PAPER_CATEGORIES];
