@@ -126,8 +126,7 @@ export function DocumentReviewViewContent({
     variant === "admin" ? "/admin/document-review" : "/dashboard/document-review";
   const canReview =
     document?.status === DOCUMENT_STATUSES.PENDING &&
-    ((variant === "branch-manager" && user?.role === USER_ROLES.BRANCH_MANAGER) ||
-      (variant === "admin" && user?.role === USER_ROLES.ADMIN));
+    (user.role === USER_ROLES.BRANCH_MANAGER || user.role === USER_ROLES.ADMIN);
   const pageTitle = canReview ? "Review Document" : "View Document";
   const pageDescription = canReview
     ? "Approve or reject this account opening document"
@@ -181,59 +180,29 @@ export function DocumentReviewViewContent({
             </div>
           ) : (
             <div className="space-y-6">
+              <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-wider text-brand-blue">
+                  Uploaded Document
+                </p>
+                <AccountOpeningDocumentPdfViewer documentId={document.id} />
+              </div>
+
               <div className="grid gap-4 sm:grid-cols-2">
-                <DetailItem label="Status" value={document.status} />
-                <DetailItem label="Document No." value={document.documentNo} />
                 <DetailItem label="Client Code" value={document.clientCode} />
-                <DetailItem label="First Name" value={document.firstName} />
-                <DetailItem label="Last Name" value={document.lastName} />
                 <DetailItem
                   label="Father Name"
                   value={document.fatherName || "—"}
                 />
                 <DetailItem label="Citizen No." value={document.citizenNo} />
                 <DetailItem label="Mobile Number" value={document.mobileNumber} />
-                <DetailItem label="Branch Code" value={document.branchCode} />
-                <DetailItem label="Branch Name" value={document.branchName} />
-                <DetailItem
-                  label="Uploaded By"
-                  value={document.uploadedByName}
-                />
                 <DetailItem
                   label="File Size"
                   value={formatFileSize(document.fileSize)}
                 />
                 <DetailItem
-                  label="Uploaded Date"
-                  value={formatDocumentDate(document.createdAt)}
+                  label="Last Updated"
+                  value={formatDocumentDate(document.updatedAt)}
                 />
-                {document.reviewedAt ? (
-                  <>
-                    <DetailItem
-                      label="Reviewed By"
-                      value={document.reviewedByName ?? "—"}
-                    />
-                    <DetailItem
-                      label="Reviewed At"
-                      value={formatDocumentDate(document.reviewedAt)}
-                    />
-                  </>
-                ) : null}
-                {document.rejectionRemarks ? (
-                  <div className="sm:col-span-2">
-                    <DetailItem
-                      label="Rejection Remarks"
-                      value={document.rejectionRemarks}
-                    />
-                  </div>
-                ) : null}
-              </div>
-
-              <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-wider text-brand-blue">
-                  Uploaded Document
-                </p>
-                <AccountOpeningDocumentPdfViewer documentId={document.id} />
               </div>
 
               {canReview ? (
