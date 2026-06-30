@@ -10,6 +10,7 @@ import {
   GraduationCap,
   HandCoins,
   House,
+  Monitor,
   Megaphone,
   Menu,
   PiggyBank,
@@ -33,6 +34,7 @@ const TRAINING_MATERIAL_LINKS = [
   { href: "/training-materials/credit", label: "Credit", icon: HandCoins },
   { href: "/training-materials/operation", label: "Operation", icon: ClipboardList },
   { href: "/training-materials/risks", label: "Risks", icon: TriangleAlert },
+  { href: "/training-materials/it", label: "IT", icon: Monitor },
 ];
 
 export function PublicPortalLayout({ children }: { children: ReactNode }) {
