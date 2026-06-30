@@ -16,6 +16,7 @@ import {
   ScrollText,
   ShieldUser,
   ShieldCheck,
+  TriangleAlert,
   UserRound,
   X,
 } from "lucide-react";
@@ -31,6 +32,7 @@ const TRAINING_MATERIAL_LINKS = [
   { href: "/training-materials/aml", label: "AML", icon: ShieldCheck },
   { href: "/training-materials/credit", label: "Credit", icon: HandCoins },
   { href: "/training-materials/operation", label: "Operation", icon: ClipboardList },
+  { href: "/training-materials/risks", label: "Risks", icon: TriangleAlert },
 ];
 
 export function PublicPortalLayout({ children }: { children: ReactNode }) {
