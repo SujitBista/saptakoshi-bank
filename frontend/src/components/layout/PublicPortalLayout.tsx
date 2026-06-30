@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   ChevronDown,
+  ClipboardList,
   FileText,
   GraduationCap,
   HandCoins,
@@ -29,6 +30,7 @@ const PRODUCT_PAPER_LINKS = [
 const TRAINING_MATERIAL_LINKS = [
   { href: "/training-materials/aml", label: "AML", icon: ShieldCheck },
   { href: "/training-materials/credit", label: "Credit", icon: HandCoins },
+  { href: "/training-materials/operation", label: "Operation", icon: ClipboardList },
 ];
 
 export function PublicPortalLayout({ children }: { children: ReactNode }) {
