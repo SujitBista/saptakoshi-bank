@@ -5,14 +5,19 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   ChevronDown,
+  ClipboardList,
   FileText,
+  GraduationCap,
   HandCoins,
   House,
+  Monitor,
   Megaphone,
   Menu,
   PiggyBank,
   ScrollText,
   ShieldUser,
+  ShieldCheck,
+  TriangleAlert,
   UserRound,
   X,
 } from "lucide-react";
@@ -24,12 +29,25 @@ const PRODUCT_PAPER_LINKS = [
   { href: "/product-paper/credit", label: "Credit", icon: HandCoins },
 ];
 
+const TRAINING_MATERIAL_LINKS = [
+  { href: "/training-materials/aml", label: "AML", icon: ShieldCheck },
+  { href: "/training-materials/credit", label: "Credit", icon: HandCoins },
+  { href: "/training-materials/operation", label: "Operation", icon: ClipboardList },
+  { href: "/training-materials/risks", label: "Risks", icon: TriangleAlert },
+  { href: "/training-materials/it", label: "IT", icon: Monitor },
+];
+
 export function PublicPortalLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProductMenuOpen, setIsProductMenuOpen] = useState(false);
+  const [isTrainingMenuOpen, setIsTrainingMenuOpen] = useState(false);
   const productMenuRef = useRef<HTMLDivElement>(null);
+  const trainingMenuRef = useRef<HTMLDivElement>(null);
   const isProductPaperActive = PRODUCT_PAPER_LINKS.some(
+    (item) => pathname === item.href || pathname.startsWith(`${item.href}/`)
+  );
+  const isTrainingMaterialsActive = TRAINING_MATERIAL_LINKS.some(
     (item) => pathname === item.href || pathname.startsWith(`${item.href}/`)
   );
   const isPoliciesActive =
@@ -42,11 +60,15 @@ export function PublicPortalLayout({ children }: { children: ReactNode }) {
       if (!productMenuRef.current?.contains(event.target as Node)) {
         setIsProductMenuOpen(false);
       }
+      if (!trainingMenuRef.current?.contains(event.target as Node)) {
+        setIsTrainingMenuOpen(false);
+      }
     }
 
     function handleEscape(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setIsProductMenuOpen(false);
+        setIsTrainingMenuOpen(false);
       }
     }
 
@@ -167,6 +189,79 @@ export function PublicPortalLayout({ children }: { children: ReactNode }) {
               ) : null}
             </div>
 
+            <div
+              ref={trainingMenuRef}
+              className="relative"
+              onMouseEnter={() => setIsTrainingMenuOpen(true)}
+              onMouseLeave={() => setIsTrainingMenuOpen(false)}
+            >
+              <button
+                type="button"
+                className={cn(
+                  navLinkClass(isTrainingMaterialsActive || isTrainingMenuOpen),
+                  isTrainingMenuOpen && "bg-white/10"
+                )}
+                aria-expanded={isTrainingMenuOpen}
+                aria-haspopup="menu"
+                aria-controls="training-materials-menu"
+                onClick={() => setIsTrainingMenuOpen((open) => !open)}
+              >
+                <GraduationCap className="h-4 w-4" aria-hidden="true" />
+                Training Materials
+                <ChevronDown
+                  className={cn(
+                    "h-4 w-4 transition-transform duration-200",
+                    isTrainingMenuOpen && "rotate-180"
+                  )}
+                  aria-hidden="true"
+                />
+                <span
+                  className={cn(
+                    "absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-white transition-opacity",
+                    isTrainingMaterialsActive || isTrainingMenuOpen
+                      ? "opacity-100"
+                      : "opacity-0 group-hover:opacity-70"
+                  )}
+                  aria-hidden="true"
+                />
+              </button>
+
+              {isTrainingMenuOpen ? (
+                <div className="absolute left-0 top-full z-50 pt-1.5">
+                  <div
+                    id="training-materials-menu"
+                    role="menu"
+                    className="min-w-[12rem] overflow-hidden rounded-lg border border-brand-black-15 bg-white py-1 shadow-lg"
+                  >
+                    {TRAINING_MATERIAL_LINKS.map((item) => {
+                      const isActive =
+                        pathname === item.href || pathname.startsWith(`${item.href}/`);
+                      const Icon = item.icon;
+
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          role="menuitem"
+                          className={cn(
+                            "flex items-center gap-3 px-4 py-2.5 text-sm text-brand-black transition-colors hover:bg-brand-blue-05",
+                            isActive && "bg-brand-blue-05 font-semibold text-brand-blue"
+                          )}
+                          onClick={() => setIsTrainingMenuOpen(false)}
+                        >
+                          <Icon
+                            className="h-4 w-4 shrink-0 text-brand-blue"
+                            aria-hidden="true"
+                          />
+                          {item.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
             <Link href="/policies" className={navLinkClass(isPoliciesActive)}>
               <ScrollText className="h-4 w-4" aria-hidden="true" />
               Policies
@@ -254,6 +349,30 @@ export function PublicPortalLayout({ children }: { children: ReactNode }) {
                 Product Paper
               </p>
               {PRODUCT_PAPER_LINKS.map((item) => {
+                const isActive =
+                  pathname === item.href || pathname.startsWith(`${item.href}/`);
+                const Icon = item.icon;
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white hover:bg-white/10",
+                      isActive && "bg-white/10 font-semibold"
+                    )}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Icon className="h-4 w-4" aria-hidden="true" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+
+              <p className="px-3 pt-2 text-xs font-semibold uppercase tracking-wider text-brand-blue-25">
+                Training Materials
+              </p>
+              {TRAINING_MATERIAL_LINKS.map((item) => {
                 const isActive =
                   pathname === item.href || pathname.startsWith(`${item.href}/`);
                 const Icon = item.icon;
