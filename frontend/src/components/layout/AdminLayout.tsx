@@ -32,6 +32,10 @@ const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
       { href: "/admin/circulars", label: "Circulars" },
     ],
   },
+  {
+    label: "Training Materials",
+    items: [{ href: "/admin/training-materials/aml", label: "AML Management" }],
+  },
 ];
 
 const ADMIN_NAV_ITEMS = ADMIN_NAV_SECTIONS.flatMap((section) => section.items);
