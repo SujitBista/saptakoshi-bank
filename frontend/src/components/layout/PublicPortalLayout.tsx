@@ -28,6 +28,7 @@ const PRODUCT_PAPER_LINKS = [
 
 const TRAINING_MATERIAL_LINKS = [
   { href: "/training-materials/aml", label: "AML", icon: ShieldCheck },
+  { href: "/training-materials/credit", label: "Credit", icon: HandCoins },
 ];
 
 export function PublicPortalLayout({ children }: { children: ReactNode }) {

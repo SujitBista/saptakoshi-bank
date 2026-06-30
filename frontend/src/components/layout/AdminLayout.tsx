@@ -34,7 +34,10 @@ const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
   },
   {
     label: "Training Materials",
-    items: [{ href: "/admin/training-materials/aml", label: "AML Management" }],
+    items: [
+      { href: "/admin/training-materials/aml", label: "AML Management" },
+      { href: "/admin/training-materials/credit", label: "Credit Management" },
+    ],
   },
 ];
 
