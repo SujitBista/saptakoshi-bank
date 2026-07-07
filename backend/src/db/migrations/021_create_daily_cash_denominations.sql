@@ -1,0 +1,25 @@
+CREATE TABLE daily_cash_denominations (
+  id SERIAL PRIMARY KEY,
+  branch_id INTEGER NOT NULL REFERENCES branches(id),
+  teller_id INTEGER NOT NULL REFERENCES users(id),
+  denomination_date DATE NOT NULL,
+  thousand_count INTEGER NOT NULL DEFAULT 0,
+  five_hundred_count INTEGER NOT NULL DEFAULT 0,
+  one_hundred_count INTEGER NOT NULL DEFAULT 0,
+  fifty_count INTEGER NOT NULL DEFAULT 0,
+  twenty_count INTEGER NOT NULL DEFAULT 0,
+  ten_count INTEGER NOT NULL DEFAULT 0,
+  five_count INTEGER NOT NULL DEFAULT 0,
+  two_count INTEGER NOT NULL DEFAULT 0,
+  one_count INTEGER NOT NULL DEFAULT 0,
+  coin_10_count INTEGER NOT NULL DEFAULT 0,
+  coin_5_count INTEGER NOT NULL DEFAULT 0,
+  coin_2_count INTEGER NOT NULL DEFAULT 0,
+  coin_1_count INTEGER NOT NULL DEFAULT 0,
+  total_amount BIGINT NOT NULL,
+  notes TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT daily_cash_denominations_branch_date_unique
+    UNIQUE (branch_id, denomination_date)
+);

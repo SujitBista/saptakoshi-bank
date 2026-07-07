@@ -84,4 +84,19 @@ describe("admin-auth.service login", () => {
       new AuthError("Invalid credentials")
     );
   });
+
+  it("rejects teller login when branch assignment is missing", async () => {
+    vi.mocked(userRepository.findByEmail).mockResolvedValue({
+      ...mockUser,
+      role: USER_ROLES.TELLER,
+      branch_id: null,
+      branch_code: null,
+      branch_name: null,
+    });
+    vi.mocked(password.comparePassword).mockResolvedValue(true);
+
+    await expect(login("ram@saptakoshi.com", "password123")).rejects.toThrow(
+      new AuthError("Account is missing a branch assignment. Contact an administrator.")
+    );
+  });
 });

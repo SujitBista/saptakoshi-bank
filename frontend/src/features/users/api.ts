@@ -155,7 +155,7 @@ export function userToEditFormValues(user: User): UserEditFormValues {
     username: user.username,
     email: user.email,
     branchId: user.branchId ? String(user.branchId) : "",
-    role: user.role as "ADMIN" | "MAKER" | "CHECKER",
+    role: user.role as "ADMIN" | "MAKER" | "CHECKER" | "TELLER",
     status: user.isActive ? "active" : "inactive",
   };
 }

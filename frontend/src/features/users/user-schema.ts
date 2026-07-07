@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const roleSchema = z.enum(["ADMIN", "MAKER", "CHECKER"]);
+const roleSchema = z.enum(["ADMIN", "MAKER", "CHECKER", "TELLER"]);
 const statusSchema = z.enum(["active", "inactive"]);
 
 export const userCreateFormSchema = z
@@ -28,7 +28,9 @@ export const userCreateFormSchema = z
   })
   .superRefine((values, context) => {
     if (
-      (values.role === "MAKER" || values.role === "CHECKER") &&
+      (values.role === "MAKER" ||
+        values.role === "CHECKER" ||
+        values.role === "TELLER") &&
       !values.branchId
     ) {
       context.addIssue({
@@ -63,7 +65,9 @@ export const userEditFormSchema = z
   })
   .superRefine((values, context) => {
     if (
-      (values.role === "MAKER" || values.role === "CHECKER") &&
+      (values.role === "MAKER" ||
+        values.role === "CHECKER" ||
+        values.role === "TELLER") &&
       !values.branchId
     ) {
       context.addIssue({

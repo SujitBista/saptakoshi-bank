@@ -79,6 +79,10 @@ export function getDashboardPathForRole(role: string): string {
     return "/dashboard/document-review";
   }
 
+  if (normalizedRole === USER_ROLES.TELLER) {
+    return "/dashboard/daily-cash-denominations";
+  }
+
   return "/dashboard";
 }
 

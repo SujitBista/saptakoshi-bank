@@ -45,6 +45,14 @@ function getNavigationItems(userRole?: string): NavigationItem[] {
     });
   }
 
+  if (userRole === USER_ROLES.TELLER) {
+    items.push({
+      href: "/dashboard/daily-cash-denominations",
+      label: "Daily Cash Denomination",
+      matchPaths: ["/dashboard/daily-cash-denominations"],
+    });
+  }
+
   return items;
 }
 

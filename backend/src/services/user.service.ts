@@ -97,7 +97,7 @@ function validateRole(role: string): string {
   const allowedRoles = new Set<string>(Object.values(USER_ROLES));
 
   if (!allowedRoles.has(normalized)) {
-    throw new UserError("Role must be ADMIN, MAKER, or CHECKER");
+    throw new UserError("Role must be ADMIN, MAKER, CHECKER, or TELLER");
   }
 
   return normalized;
@@ -132,7 +132,11 @@ async function validateBranchForRole(
   role: string,
   branchId: number | null | undefined
 ): Promise<number | null> {
-  if (role === USER_ROLES.MAKER || role === USER_ROLES.CHECKER) {
+  if (
+    role === USER_ROLES.MAKER ||
+    role === USER_ROLES.CHECKER ||
+    role === USER_ROLES.TELLER
+  ) {
     if (branchId === undefined || branchId === null) {
       throw new UserError(`Branch is required for ${role} role`);
     }
@@ -338,10 +342,11 @@ export async function transferUserBranch(
 
   if (
     existing.role !== USER_ROLES.MAKER &&
-    existing.role !== USER_ROLES.CHECKER
+    existing.role !== USER_ROLES.CHECKER &&
+    existing.role !== USER_ROLES.TELLER
   ) {
     throw new UserError(
-      "Only makers and checkers can be transferred between branches"
+      "Only makers, checkers, and tellers can be transferred between branches"
     );
   }
 

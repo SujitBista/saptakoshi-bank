@@ -4,7 +4,11 @@ import type { UserRole } from "@saptakoshi/shared";
 import { USER_ROLES } from "@saptakoshi/shared";
 import { useAuth } from "@/hooks/useAuth";
 
-const STAFF_ROLES: UserRole[] = [USER_ROLES.MAKER, USER_ROLES.CHECKER];
+const STAFF_ROLES: UserRole[] = [
+  USER_ROLES.MAKER,
+  USER_ROLES.CHECKER,
+  USER_ROLES.TELLER,
+];
 
 export function useStaffAuth() {
   return useAuth({
@@ -25,6 +29,14 @@ export function useMakerAuth() {
 export function useCheckerAuth() {
   return useAuth({
     requiredRole: USER_ROLES.CHECKER,
+    loginPath: "/login",
+    forbiddenPath: "/dashboard",
+  });
+}
+
+export function useTellerAuth() {
+  return useAuth({
+    requiredRole: USER_ROLES.TELLER,
     loginPath: "/login",
     forbiddenPath: "/dashboard",
   });

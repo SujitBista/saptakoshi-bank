@@ -45,7 +45,8 @@ export async function login(
 
   if (
     (user.role === USER_ROLES.MAKER ||
-      user.role === USER_ROLES.CHECKER) &&
+      user.role === USER_ROLES.CHECKER ||
+      user.role === USER_ROLES.TELLER) &&
     !user.branch_id
   ) {
     throw new AuthError(

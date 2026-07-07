@@ -186,7 +186,7 @@ describe("transferUserBranch", () => {
     ).rejects.toEqual(
       expect.objectContaining({
         message:
-          "Only makers and checkers can be transferred between branches",
+          "Only makers, checkers, and tellers can be transferred between branches",
       })
     );
   });
