@@ -21,6 +21,7 @@ export interface LoginResult {
     branchId: number | null;
     branchCode: string | null;
     branchName: string | null;
+    mustResetPassword: boolean;
   };
 }
 
@@ -72,6 +73,7 @@ export async function login(
       branchId: user.branch_id,
       branchCode: user.branch_code,
       branchName: user.branch_name,
+      mustResetPassword: user.must_reset_password,
     },
   };
 }

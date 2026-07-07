@@ -1,8 +1,9 @@
 import { USER_ROLES, normalizeUserRole } from "@saptakoshi/shared";
-import { hashPassword } from "../auth/password";
+import { comparePassword, hashPassword } from "../auth/password";
 import { withTransaction } from "../config/database";
 import * as branchRepository from "../repositories/branch.repository";
 import * as employeeBranchHistoryRepository from "../repositories/employee-branch-history.repository";
+import type { AuthenticatedUser } from "../middleware/auth.middleware";
 import type { UserWithBranchRow } from "../repositories/user.repository";
 import * as userRepository from "../repositories/user.repository";
 
@@ -26,6 +27,7 @@ export interface UserDto {
   branchCode: string | null;
   branchName: string | null;
   isActive: boolean;
+  mustResetPassword: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -51,6 +53,11 @@ export interface UpdateUserPayload {
 
 export interface ResetPasswordPayload {
   password?: string;
+}
+
+export interface ChangeOwnPasswordPayload {
+  currentPassword?: string;
+  newPassword?: string;
 }
 
 export interface TransferUserBranchPayload {
@@ -83,6 +90,7 @@ function toUserDto(row: UserWithBranchRow): UserDto {
     branchCode: row.branch_code,
     branchName: row.branch_name,
     isActive: row.is_active,
+    mustResetPassword: row.must_reset_password,
     createdAt: row.created_at.toISOString(),
     updatedAt: row.updated_at.toISOString(),
   };
@@ -265,6 +273,7 @@ export async function createUser(payload: CreateUserPayload): Promise<UserDto> {
     passwordHash,
     role,
     isActive: payload.isActive ?? true,
+    mustResetPassword: true,
   });
 
   return toUserDto(row);
@@ -412,7 +421,35 @@ export async function resetUserPassword(
   const password = validatePassword(payload.password, "Password");
   const passwordHash = await hashPassword(password);
 
-  const row = await userRepository.updatePassword(id, passwordHash);
+  const row = await userRepository.updatePassword(id, passwordHash, true);
+
+  if (!row) {
+    throw new UserError("User not found", 404);
+  }
+
+  return toUserDto(row);
+}
+
+export async function changeOwnPassword(
+  authenticatedUser: AuthenticatedUser,
+  payload: ChangeOwnPasswordPayload
+): Promise<UserDto> {
+  const existing = await userRepository.findById(authenticatedUser.id);
+
+  if (!existing) {
+    throw new UserError("User not found", 404);
+  }
+
+  const currentPassword = validatePassword(payload.currentPassword, "Current password");
+  const newPassword = validatePassword(payload.newPassword, "New password");
+
+  const passwordMatches = await comparePassword(currentPassword, existing.password_hash);
+  if (!passwordMatches) {
+    throw new UserError("Current password is incorrect", 401);
+  }
+
+  const passwordHash = await hashPassword(newPassword);
+  const row = await userRepository.updatePassword(existing.id, passwordHash, false);
 
   if (!row) {
     throw new UserError("User not found", 404);

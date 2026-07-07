@@ -17,6 +17,7 @@ export interface AuthUser {
   branchId: number | null;
   branchCode: string | null;
   branchName: string | null;
+  mustResetPassword: boolean;
 }
 
 export interface LoginResponse {

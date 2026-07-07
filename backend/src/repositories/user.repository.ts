@@ -10,6 +10,7 @@ export interface UserRow {
   password_hash: string;
   role: string;
   is_active: boolean;
+  must_reset_password: boolean;
   created_at: Date;
   updated_at: Date;
 }
@@ -45,6 +46,7 @@ const USER_SELECT_COLUMNS = `
   u.password_hash,
   u.role,
   u.is_active,
+  u.must_reset_password,
   u.created_at,
   u.updated_at,
   b.branch_code,
@@ -92,6 +94,7 @@ export interface CreateUserInput {
   passwordHash: string;
   role: string;
   isActive: boolean;
+  mustResetPassword: boolean;
 }
 
 export interface UpdateUserInput {
@@ -183,9 +186,10 @@ export async function create(input: CreateUserInput): Promise<UserWithBranchRow>
        email,
        password_hash,
        role,
-       is_active
+       is_active,
+       must_reset_password
      )
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
      RETURNING id`,
     [
       input.branchId,
@@ -195,6 +199,7 @@ export async function create(input: CreateUserInput): Promise<UserWithBranchRow>
       input.passwordHash,
       input.role,
       input.isActive,
+      input.mustResetPassword,
     ]
   );
 
@@ -278,15 +283,17 @@ export async function updateBranchId(
 
 export async function updatePassword(
   id: number,
-  passwordHash: string
+  passwordHash: string,
+  mustResetPassword: boolean
 ): Promise<UserWithBranchRow | null> {
   const rows = await query<{ id: number }>(
     `UPDATE users
      SET password_hash = $2,
+         must_reset_password = $3,
          updated_at = NOW()
      WHERE id = $1
      RETURNING id`,
-    [id, passwordHash]
+    [id, passwordHash, mustResetPassword]
   );
 
   if (!rows[0]) {

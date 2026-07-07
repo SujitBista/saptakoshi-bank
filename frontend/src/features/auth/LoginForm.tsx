@@ -9,6 +9,7 @@ import { USER_ROLES } from "@saptakoshi/shared";
 import { ApiError, apiClient } from "@/lib/api-client";
 import {
   getDashboardPathForRole,
+  getResetPasswordPathForRole,
   getUser,
   isAuthenticated,
   saveToken,
@@ -48,7 +49,11 @@ export function LoginForm({ redirectPath }: LoginFormProps) {
     const storedUser = getUser();
     if (!storedUser) return;
 
-    router.replace(redirectPath ?? getDashboardPathForRole(storedUser.role));
+    router.replace(
+      storedUser.mustResetPassword
+        ? getResetPasswordPathForRole(storedUser.role)
+        : redirectPath ?? getDashboardPathForRole(storedUser.role)
+    );
   }, [redirectPath, router]);
 
   async function onSubmit(values: LoginFormValues) {
@@ -64,7 +69,9 @@ export function LoginForm({ redirectPath }: LoginFormProps) {
       saveUser(result.user);
 
       const destination =
-        redirectPath ?? getDashboardPathForRole(result.user.role);
+        result.user.mustResetPassword
+          ? getResetPasswordPathForRole(result.user.role)
+          : redirectPath ?? getDashboardPathForRole(result.user.role);
 
       if (
         redirectPath?.startsWith("/admin") &&

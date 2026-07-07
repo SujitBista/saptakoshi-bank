@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { USER_ROLES } from "@saptakoshi/shared";
 import { AdminBrand } from "@/components/layout/AdminBrand";
 import { Button } from "@/components/ui/Button";
+import { getResetPasswordPathForRole } from "@/lib/auth";
 
 type UserLayoutProps = {
   children: ReactNode;
@@ -64,6 +65,7 @@ export function UserLayout({
 }: UserLayoutProps) {
   const pathname = usePathname();
   const navigationItems = getNavigationItems(userRole);
+  const resetPasswordPath = getResetPasswordPathForRole(userRole ?? USER_ROLES.MAKER);
 
   return (
     <div className="flex min-h-screen flex-col bg-brand-blue-05">
@@ -90,13 +92,22 @@ export function UserLayout({
             ) : null}
 
             {onLogout ? (
-              <Button
-                variant="outline"
-                onClick={onLogout}
-                className="border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white"
-              >
-                Logout
-              </Button>
+              <>
+                <Button
+                  href={resetPasswordPath}
+                  variant="outline"
+                  className="border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+                >
+                  Reset Password
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={onLogout}
+                  className="border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+                >
+                  Logout
+                </Button>
+              </>
             ) : null}
           </div>
         </div>

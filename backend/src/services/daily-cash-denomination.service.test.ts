@@ -33,6 +33,7 @@ const tellerUser: userRepository.UserWithBranchRow = {
   password_hash: "secret",
   role: USER_ROLES.TELLER,
   is_active: true,
+  must_reset_password: false,
   created_at: new Date("2026-07-01T00:00:00.000Z"),
   updated_at: new Date("2026-07-01T00:00:00.000Z"),
   branch_code: "BRT003",
