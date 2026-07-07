@@ -18,6 +18,7 @@ const mockUser: userRepository.UserWithBranchRow = {
   password_hash: "hashed-password",
   role: USER_ROLES.MAKER,
   is_active: true,
+  must_reset_password: false,
   created_at: new Date(),
   updated_at: new Date(),
   branch_code: "BRT001",

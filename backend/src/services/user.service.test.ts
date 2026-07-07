@@ -28,6 +28,7 @@ const branchManager: userRepository.UserWithBranchRow = {
   password_hash: "secret",
   role: USER_ROLES.CHECKER,
   is_active: true,
+  must_reset_password: false,
   created_at: new Date("2026-06-18T00:00:00.000Z"),
   updated_at: new Date("2026-06-18T00:00:00.000Z"),
   branch_code: "BRT001",

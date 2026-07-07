@@ -49,7 +49,11 @@ export function saveUser(user: AuthUser): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(
     USER_KEY,
-    JSON.stringify({ ...user, role: normalizeUserRole(user.role) })
+    JSON.stringify({
+      ...user,
+      role: normalizeUserRole(user.role),
+      mustResetPassword: Boolean(user.mustResetPassword),
+    })
   );
 }
 
@@ -62,7 +66,11 @@ export function getUser(): AuthUser | null {
 
   try {
     const user = JSON.parse(raw) as AuthUser;
-    return { ...user, role: normalizeUserRole(user.role) };
+    return {
+      ...user,
+      role: normalizeUserRole(user.role),
+      mustResetPassword: Boolean(user.mustResetPassword),
+    };
   } catch {
     return null;
   }
@@ -84,6 +92,12 @@ export function getDashboardPathForRole(role: string): string {
   }
 
   return "/dashboard";
+}
+
+export function getResetPasswordPathForRole(role: string): string {
+  return normalizeUserRole(role) === USER_ROLES.ADMIN
+    ? "/admin/reset-password"
+    : "/dashboard/reset-password";
 }
 
 export function getLoginPathForRole(role: string): string {

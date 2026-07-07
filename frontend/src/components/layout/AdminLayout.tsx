@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { AdminBrand } from "@/components/layout/AdminBrand";
 import { Button } from "@/components/ui/Button";
+import { getResetPasswordPathForRole } from "@/lib/auth";
 
 type AdminNavItem = {
   href: string;
@@ -125,6 +126,7 @@ export function AdminLayout({
   onLogout,
 }: AdminLayoutProps) {
   const pathname = usePathname();
+  const resetPasswordPath = getResetPasswordPathForRole("ADMIN");
 
   return (
     <div className="flex min-h-screen flex-col bg-brand-blue-05">
@@ -153,13 +155,22 @@ export function AdminLayout({
             ) : null}
 
             {onLogout ? (
-              <Button
-                variant="outline"
-                onClick={onLogout}
-                className="border-white/30 bg-white/10 px-3 py-1.5 text-sm text-white hover:bg-white/20 hover:text-white sm:px-4 sm:py-2"
-              >
-                Logout
-              </Button>
+              <>
+                <Button
+                  href={resetPasswordPath}
+                  variant="outline"
+                  className="border-white/30 bg-white/10 px-3 py-1.5 text-sm text-white hover:bg-white/20 hover:text-white sm:px-4 sm:py-2"
+                >
+                  Reset Password
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={onLogout}
+                  className="border-white/30 bg-white/10 px-3 py-1.5 text-sm text-white hover:bg-white/20 hover:text-white sm:px-4 sm:py-2"
+                >
+                  Logout
+                </Button>
+              </>
             ) : null}
           </div>
         </div>

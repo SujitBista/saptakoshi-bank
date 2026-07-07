@@ -1,10 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import type { AuthUser, UserRole } from "@saptakoshi/shared";
+import { useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import type { UserRole } from "@saptakoshi/shared";
 import { USER_ROLES } from "@saptakoshi/shared";
-import { getUser, isAuthenticated, removeToken } from "@/lib/auth";
+import {
+  getResetPasswordPathForRole,
+  getUser,
+  isAuthenticated,
+  removeToken,
+} from "@/lib/auth";
 
 type UseAuthOptions = {
   requiredRole?: UserRole;
@@ -37,17 +42,22 @@ export function useAuth(options: UseAuthOptions = {}) {
     forbiddenPath = "/dashboard",
   } = options;
   const router = useRouter();
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [isReady, setIsReady] = useState(false);
+  const pathname = usePathname();
+  const storedUser = getUser();
   const allowedRolesKey = allowedRoles?.join("|") ?? "";
+  const resetPasswordPath = storedUser
+    ? getResetPasswordPathForRole(storedUser.role)
+    : null;
+  const isReady =
+    Boolean(storedUser) &&
+    isRoleAllowed(storedUser.role, requiredRole, allowedRoles) &&
+    (!storedUser.mustResetPassword || pathname === resetPasswordPath);
 
   useEffect(() => {
     if (!isAuthenticated()) {
       router.replace(loginPath);
       return;
     }
-
-    const storedUser = getUser();
 
     if (!storedUser) {
       removeToken();
@@ -62,17 +72,18 @@ export function useAuth(options: UseAuthOptions = {}) {
       return;
     }
 
-    setUser((current) =>
-      current?.id === storedUser.id &&
-      current.role === storedUser.role &&
-      current.branchId === storedUser.branchId
-        ? current
-        : storedUser
-    );
-    setIsReady(true);
+    const resetPasswordPath = getResetPasswordPathForRole(storedUser.role);
+    if (
+      storedUser.mustResetPassword &&
+      resetPasswordPath &&
+      pathname !== resetPasswordPath
+    ) {
+      router.replace(resetPasswordPath);
+      return;
+    }
     // router methods are stable; allowedRoles is keyed to avoid array identity loops
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allowedRolesKey, forbiddenPath, loginPath, requiredRole]);
+  }, [allowedRolesKey, forbiddenPath, loginPath, pathname, requiredRole]);
 
   function handleLogout() {
     removeToken();
@@ -80,7 +91,7 @@ export function useAuth(options: UseAuthOptions = {}) {
   }
 
   return {
-    user,
+    user: isReady ? storedUser : null,
     isReady,
     handleLogout,
   };
