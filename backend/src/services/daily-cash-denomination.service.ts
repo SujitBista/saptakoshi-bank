@@ -104,6 +104,11 @@ export interface CreateDailyCashDenominationPayload {
   teller_id?: unknown;
 }
 
+export interface UpdateDailyCashDenominationPayload
+  extends CreateDailyCashDenominationPayload {
+  id: number;
+}
+
 export const DEFAULT_DAILY_CASH_DENOMINATION_PAGE = 1;
 export const DEFAULT_DAILY_CASH_DENOMINATION_PAGE_SIZE = 10;
 export const MAX_DAILY_CASH_DENOMINATION_PAGE_SIZE = 100;
@@ -133,6 +138,13 @@ interface DailyCashDenominationListRow {
   teller_name: string;
   total_amount: string | number;
   created_at: Date;
+}
+
+interface NormalizedDailyCashDenominationInput {
+  denominationDate: string;
+  counts: Record<DenominationCountKey, number>;
+  notes: string | null;
+  totalAmount: number;
 }
 
 function toDto(row: DailyCashDenominationRow): DailyCashDenominationDto {
@@ -278,24 +290,9 @@ function calculateTotalAmount(counts: Record<DenominationCountKey, number>): num
   }, 0);
 }
 
-export async function createDailyCashDenomination(
+function normalizeDailyCashDenominationInput(
   payload: CreateDailyCashDenominationPayload
-): Promise<DailyCashDenominationDto> {
-  assertServerOwnedFields(payload);
-
-  const currentUser = await getActiveTeller(payload.authenticatedUser);
-  const branchId = currentUser.branch_id;
-
-  if (!branchId) {
-    throw new DailyCashDenominationError("Assigned branch is required", 403);
-  }
-
-  const branch = await branchRepository.findById(branchId);
-
-  if (!branch) {
-    throw new DailyCashDenominationError("Branch not found", 404);
-  }
-
+): NormalizedDailyCashDenominationInput {
   const denominationDate = parseDenominationDate(payload.denominationDate);
   const counts = {
     thousandCount: parseCount(payload.thousandCount, "1000 count"),
@@ -314,6 +311,76 @@ export async function createDailyCashDenomination(
   };
   const notes = parseNotes(payload.notes);
   const totalAmount = calculateTotalAmount(counts);
+
+  return {
+    denominationDate,
+    counts,
+    notes,
+    totalAmount,
+  };
+}
+
+async function getOwnedDenominationRecord(
+  id: number,
+  tellerId: number
+): Promise<DailyCashDenominationRow> {
+  const rows = await query<DailyCashDenominationRow>(
+    `SELECT
+       id,
+       branch_id,
+       teller_id,
+       denomination_date,
+       thousand_count,
+       five_hundred_count,
+       one_hundred_count,
+       fifty_count,
+       twenty_count,
+       ten_count,
+       five_count,
+       two_count,
+       one_count,
+       coin_10_count,
+       coin_5_count,
+       coin_2_count,
+       coin_1_count,
+       total_amount,
+       notes,
+       created_at,
+       updated_at
+     FROM daily_cash_denominations
+     WHERE id = $1 AND teller_id = $2`,
+    [id, tellerId]
+  );
+
+  const row = rows[0];
+
+  if (!row) {
+    throw new DailyCashDenominationError("Denomination record not found", 404);
+  }
+
+  return row;
+}
+
+export async function createDailyCashDenomination(
+  payload: CreateDailyCashDenominationPayload
+): Promise<DailyCashDenominationDto> {
+  assertServerOwnedFields(payload);
+
+  const currentUser = await getActiveTeller(payload.authenticatedUser);
+  const branchId = currentUser.branch_id;
+
+  if (!branchId) {
+    throw new DailyCashDenominationError("Assigned branch is required", 403);
+  }
+
+  const branch = await branchRepository.findById(branchId);
+
+  if (!branch) {
+    throw new DailyCashDenominationError("Branch not found", 404);
+  }
+
+  const { denominationDate, counts, notes, totalAmount } =
+    normalizeDailyCashDenominationInput(payload);
 
   const existing = await query<{ id: number }>(
     `SELECT id
@@ -461,4 +528,140 @@ export async function listDailyCashDenominations(filters: {
     total,
     totalPages: total === 0 ? 0 : Math.ceil(total / limit),
   };
+}
+
+export async function getDailyCashDenominationById(filters: {
+  authenticatedUser: AuthenticatedUser;
+  id: number;
+}): Promise<DailyCashDenominationDto> {
+  const currentUser = await getActiveTeller(filters.authenticatedUser);
+  const row = await getOwnedDenominationRecord(filters.id, currentUser.id);
+  return toDto(row);
+}
+
+export async function updateDailyCashDenomination(
+  payload: UpdateDailyCashDenominationPayload
+): Promise<DailyCashDenominationDto> {
+  assertServerOwnedFields(payload);
+
+  const currentUser = await getActiveTeller(payload.authenticatedUser);
+  const existingRecord = await getOwnedDenominationRecord(payload.id, currentUser.id);
+  const { denominationDate, counts, notes, totalAmount } =
+    normalizeDailyCashDenominationInput(payload);
+
+  const duplicateRows = await query<{ id: number }>(
+    `SELECT id
+     FROM daily_cash_denominations
+     WHERE branch_id = $1
+       AND denomination_date = $2
+       AND id <> $3`,
+    [existingRecord.branch_id, denominationDate, payload.id]
+  );
+
+  if (duplicateRows[0]) {
+    throw new DailyCashDenominationError(
+      "A denomination record already exists for this branch and date",
+      409
+    );
+  }
+
+  try {
+    const rows = await query<DailyCashDenominationRow>(
+      `UPDATE daily_cash_denominations
+       SET denomination_date = $2,
+           thousand_count = $3,
+           five_hundred_count = $4,
+           one_hundred_count = $5,
+           fifty_count = $6,
+           twenty_count = $7,
+           ten_count = $8,
+           five_count = $9,
+           two_count = $10,
+           one_count = $11,
+           coin_10_count = $12,
+           coin_5_count = $13,
+           coin_2_count = $14,
+           coin_1_count = $15,
+           total_amount = $16,
+           notes = $17,
+           updated_at = NOW()
+       WHERE id = $1 AND teller_id = $18
+       RETURNING
+         id,
+         branch_id,
+         teller_id,
+         denomination_date,
+         thousand_count,
+         five_hundred_count,
+         one_hundred_count,
+         fifty_count,
+         twenty_count,
+         ten_count,
+         five_count,
+         two_count,
+         one_count,
+         coin_10_count,
+         coin_5_count,
+         coin_2_count,
+         coin_1_count,
+         total_amount,
+         notes,
+         created_at,
+         updated_at`,
+      [
+        payload.id,
+        denominationDate,
+        counts.thousandCount,
+        counts.fiveHundredCount,
+        counts.oneHundredCount,
+        counts.fiftyCount,
+        counts.twentyCount,
+        counts.tenCount,
+        counts.fiveCount,
+        counts.twoCount,
+        counts.oneCount,
+        counts.coin10Count,
+        counts.coin5Count,
+        counts.coin2Count,
+        counts.coin1Count,
+        totalAmount,
+        notes,
+        currentUser.id,
+      ]
+    );
+
+    if (!rows[0]) {
+      throw new DailyCashDenominationError("Denomination record not found", 404);
+    }
+
+    return toDto(rows[0]);
+  } catch (error) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "23505"
+    ) {
+      throw new DailyCashDenominationError(
+        "A denomination record already exists for this branch and date",
+        409
+      );
+    }
+
+    throw error;
+  }
+}
+
+export async function deleteDailyCashDenomination(filters: {
+  authenticatedUser: AuthenticatedUser;
+  id: number;
+}): Promise<void> {
+  const currentUser = await getActiveTeller(filters.authenticatedUser);
+  await getOwnedDenominationRecord(filters.id, currentUser.id);
+
+  await query(
+    `DELETE FROM daily_cash_denominations
+     WHERE id = $1 AND teller_id = $2`,
+    [filters.id, currentUser.id]
+  );
 }

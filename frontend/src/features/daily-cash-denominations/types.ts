@@ -58,6 +58,8 @@ export interface DailyCashDenomination {
   updatedAt: string;
 }
 
+export type DailyCashDenominationDetails = DailyCashDenomination;
+
 export interface DailyCashDenominationListItem {
   id: number;
   denomination_date: string;

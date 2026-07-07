@@ -21,7 +21,11 @@ interface DailyCashDenominationFormProps {
   onSubmit: (
     values: DailyCashDenominationFormValues
   ) => Promise<DailyCashDenomination>;
+  initialValues?: DailyCashDenominationFormValues;
   onSuccess?: (denomination: DailyCashDenomination) => void | Promise<void>;
+  submitLabel?: string;
+  successMessage?: (denomination: DailyCashDenomination) => string;
+  onCancel?: () => void;
 }
 
 const defaultValues: DailyCashDenominationFormValues = {
@@ -53,10 +57,15 @@ function formatCurrency(value: number): string {
 
 export function DailyCashDenominationForm({
   onSubmit,
+  initialValues = defaultValues,
   onSuccess,
+  submitLabel = "Save Denomination",
+  successMessage: buildSuccessMessage = (denomination) =>
+    `Daily cash denomination saved successfully for ${denomination.denominationDate}.`,
+  onCancel,
 }: DailyCashDenominationFormProps) {
   const [apiError, setApiError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   const {
     control,
@@ -66,7 +75,7 @@ export function DailyCashDenominationForm({
     formState: { errors, isSubmitting },
   } = useForm<DailyCashDenominationSchemaValues>({
     resolver: zodResolver(dailyCashDenominationSchema),
-    defaultValues,
+    defaultValues: initialValues,
   });
 
   const watchedValues = useWatch({
@@ -86,14 +95,17 @@ export function DailyCashDenominationForm({
 
   async function handleFormSubmit(values: DailyCashDenominationSchemaValues) {
     setApiError(null);
-    setSuccessMessage(null);
+    setStatusMessage(null);
 
     try {
       const denomination = await onSubmit(values);
       await onSuccess?.(denomination);
-      setSuccessMessage(
-        `Daily cash denomination saved successfully for ${denomination.denominationDate}.`
-      );
+      setStatusMessage(buildSuccessMessage(denomination));
+
+      if (onCancel) {
+        return;
+      }
+
       reset({
         ...defaultValues,
         denominationDate: values.denominationDate,
@@ -119,12 +131,12 @@ export function DailyCashDenominationForm({
         </div>
       ) : null}
 
-      {successMessage ? (
+      {statusMessage ? (
         <div
           className="rounded-lg border border-brand-green-15 bg-brand-green-05 px-4 py-3 text-sm text-brand-black"
           role="status"
         >
-          <p className="font-medium text-brand-green">{successMessage}</p>
+          <p className="font-medium text-brand-green">{statusMessage}</p>
         </div>
       ) : null}
 
@@ -212,9 +224,14 @@ export function DailyCashDenominationForm({
         {...register("notes")}
       />
 
-      <div className="flex justify-end border-t border-brand-black-15 pt-5">
+      <div className="flex justify-end gap-3 border-t border-brand-black-15 pt-5">
+        {onCancel ? (
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+            Cancel
+          </Button>
+        ) : null}
         <Button type="submit" isLoading={isSubmitting}>
-          Save Denomination
+          {submitLabel}
         </Button>
       </div>
     </form>

@@ -3,9 +3,12 @@ import {
   createDailyCashDenomination,
   DEFAULT_DAILY_CASH_DENOMINATION_PAGE,
   DEFAULT_DAILY_CASH_DENOMINATION_PAGE_SIZE,
+  deleteDailyCashDenomination,
   DailyCashDenominationError,
+  getDailyCashDenominationById,
   listDailyCashDenominations,
   MAX_DAILY_CASH_DENOMINATION_PAGE_SIZE,
+  updateDailyCashDenomination,
 } from "../services/daily-cash-denomination.service";
 
 function parsePositiveInt(
@@ -24,6 +27,12 @@ function parsePositiveInt(
   }
 
   return parsed;
+}
+
+function parseId(value: string | string[] | undefined): number | null {
+  const normalized = Array.isArray(value) ? value[0] : value;
+  const parsed = Number(normalized);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 }
 
 function handleDailyCashDenominationError(error: unknown, res: Response): void {
@@ -78,6 +87,88 @@ export async function getDailyCashDenominations(
     });
 
     res.json(result);
+  } catch (error) {
+    handleDailyCashDenominationError(error, res);
+  }
+}
+
+export async function getDailyCashDenomination(
+  req: Request,
+  res: Response
+): Promise<void> {
+  if (!req.user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const id = parseId(req.params.id);
+  if (!id) {
+    res.status(400).json({ error: "Invalid denomination id" });
+    return;
+  }
+
+  try {
+    const denomination = await getDailyCashDenominationById({
+      authenticatedUser: req.user,
+      id,
+    });
+
+    res.json({ denomination });
+  } catch (error) {
+    handleDailyCashDenominationError(error, res);
+  }
+}
+
+export async function putDailyCashDenomination(
+  req: Request,
+  res: Response
+): Promise<void> {
+  if (!req.user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const id = parseId(req.params.id);
+  if (!id) {
+    res.status(400).json({ error: "Invalid denomination id" });
+    return;
+  }
+
+  try {
+    const denomination = await updateDailyCashDenomination({
+      authenticatedUser: req.user,
+      id,
+      ...req.body,
+    });
+
+    res.json({ denomination });
+  } catch (error) {
+    handleDailyCashDenominationError(error, res);
+  }
+}
+
+export async function deleteDailyCashDenominationHandler(
+  req: Request,
+  res: Response
+): Promise<void> {
+  if (!req.user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const id = parseId(req.params.id);
+  if (!id) {
+    res.status(400).json({ error: "Invalid denomination id" });
+    return;
+  }
+
+  try {
+    await deleteDailyCashDenomination({
+      authenticatedUser: req.user,
+      id,
+    });
+
+    res.status(204).send();
   } catch (error) {
     handleDailyCashDenominationError(error, res);
   }

@@ -5,8 +5,11 @@ import * as branchRepository from "../repositories/branch.repository";
 import * as userRepository from "../repositories/user.repository";
 import {
   createDailyCashDenomination,
+  deleteDailyCashDenomination,
   DailyCashDenominationError,
+  getDailyCashDenominationById,
   listDailyCashDenominations,
+  updateDailyCashDenomination,
 } from "./daily-cash-denomination.service";
 
 vi.mock("../config/database", async (importOriginal) => {
@@ -283,6 +286,250 @@ describe("listDailyCashDenominations", () => {
         message: "Only tellers can add denominations",
         statusCode: 403,
       })
+    );
+  });
+});
+
+describe("getDailyCashDenominationById", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(userRepository.findById).mockResolvedValue(tellerUser);
+  });
+
+  it("returns the teller's own denomination record", async () => {
+    vi.mocked(query).mockResolvedValueOnce([
+      {
+        id: 11,
+        branch_id: 3,
+        teller_id: 9,
+        denomination_date: new Date("2026-07-07T00:00:00.000Z"),
+        thousand_count: 2,
+        five_hundred_count: 1,
+        one_hundred_count: 3,
+        fifty_count: 0,
+        twenty_count: 4,
+        ten_count: 0,
+        five_count: 0,
+        two_count: 5,
+        one_count: 6,
+        coin_10_count: 7,
+        coin_5_count: 0,
+        coin_2_count: 1,
+        coin_1_count: 2,
+        total_amount: 2970,
+        notes: "Counter verified",
+        created_at: new Date("2026-07-07T10:00:00.000Z"),
+        updated_at: new Date("2026-07-07T10:30:00.000Z"),
+      },
+    ]);
+
+    const result = await getDailyCashDenominationById({
+      authenticatedUser: {
+        id: 9,
+        email: tellerUser.email,
+        role: USER_ROLES.TELLER,
+        branch_id: 3,
+      },
+      id: 11,
+    });
+
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining("WHERE id = $1 AND teller_id = $2"),
+      [11, 9]
+    );
+    expect(result.id).toBe(11);
+    expect(result.totalAmount).toBe(2970);
+    expect(result.notes).toBe("Counter verified");
+  });
+});
+
+describe("updateDailyCashDenomination", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(userRepository.findById).mockResolvedValue(tellerUser);
+  });
+
+  it("updates the teller's own denomination record with recalculated total", async () => {
+    vi.mocked(query)
+      .mockResolvedValueOnce([
+        {
+          id: 11,
+          branch_id: 3,
+          teller_id: 9,
+          denomination_date: new Date("2026-07-07T00:00:00.000Z"),
+          thousand_count: 2,
+          five_hundred_count: 0,
+          one_hundred_count: 0,
+          fifty_count: 0,
+          twenty_count: 0,
+          ten_count: 0,
+          five_count: 0,
+          two_count: 0,
+          one_count: 0,
+          coin_10_count: 0,
+          coin_5_count: 0,
+          coin_2_count: 0,
+          coin_1_count: 0,
+          total_amount: 2000,
+          notes: null,
+          created_at: new Date("2026-07-07T10:00:00.000Z"),
+          updated_at: new Date("2026-07-07T10:00:00.000Z"),
+        },
+      ])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        {
+          id: 11,
+          branch_id: 3,
+          teller_id: 9,
+          denomination_date: new Date("2026-07-08T00:00:00.000Z"),
+          thousand_count: 1,
+          five_hundred_count: 2,
+          one_hundred_count: 0,
+          fifty_count: 1,
+          twenty_count: 0,
+          ten_count: 0,
+          five_count: 0,
+          two_count: 0,
+          one_count: 0,
+          coin_10_count: 0,
+          coin_5_count: 0,
+          coin_2_count: 0,
+          coin_1_count: 0,
+          total_amount: 2050,
+          notes: "Updated",
+          created_at: new Date("2026-07-07T10:00:00.000Z"),
+          updated_at: new Date("2026-07-08T08:00:00.000Z"),
+        },
+      ]);
+
+    const result = await updateDailyCashDenomination({
+      authenticatedUser: {
+        id: 9,
+        email: tellerUser.email,
+        role: USER_ROLES.TELLER,
+        branch_id: 3,
+      },
+      id: 11,
+      denominationDate: "2026-07-08",
+      thousandCount: 1,
+      fiveHundredCount: 2,
+      fiftyCount: 1,
+      notes: "Updated",
+    });
+
+    expect(query).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining("AND id <> $3"),
+      [3, "2026-07-08", 11]
+    );
+    expect(query).toHaveBeenNthCalledWith(
+      3,
+      expect.stringContaining("UPDATE daily_cash_denominations"),
+      [11, "2026-07-08", 1, 2, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2050, "Updated", 9]
+    );
+    expect(result.totalAmount).toBe(2050);
+    expect(result.denominationDate).toBe("2026-07-08");
+  });
+
+  it("rejects updates when another record already exists for the branch and date", async () => {
+    vi.mocked(query)
+      .mockResolvedValueOnce([
+        {
+          id: 11,
+          branch_id: 3,
+          teller_id: 9,
+          denomination_date: new Date("2026-07-07T00:00:00.000Z"),
+          thousand_count: 2,
+          five_hundred_count: 0,
+          one_hundred_count: 0,
+          fifty_count: 0,
+          twenty_count: 0,
+          ten_count: 0,
+          five_count: 0,
+          two_count: 0,
+          one_count: 0,
+          coin_10_count: 0,
+          coin_5_count: 0,
+          coin_2_count: 0,
+          coin_1_count: 0,
+          total_amount: 2000,
+          notes: null,
+          created_at: new Date("2026-07-07T10:00:00.000Z"),
+          updated_at: new Date("2026-07-07T10:00:00.000Z"),
+        },
+      ])
+      .mockResolvedValueOnce([{ id: 12 }]);
+
+    await expect(
+      updateDailyCashDenomination({
+        authenticatedUser: {
+          id: 9,
+          email: tellerUser.email,
+          role: USER_ROLES.TELLER,
+          branch_id: 3,
+        },
+        id: 11,
+        denominationDate: "2026-07-08",
+      })
+    ).rejects.toEqual(
+      expect.objectContaining({
+        message: "A denomination record already exists for this branch and date",
+        statusCode: 409,
+      })
+    );
+  });
+});
+
+describe("deleteDailyCashDenomination", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(userRepository.findById).mockResolvedValue(tellerUser);
+  });
+
+  it("deletes the teller's own denomination record", async () => {
+    vi.mocked(query)
+      .mockResolvedValueOnce([
+        {
+          id: 11,
+          branch_id: 3,
+          teller_id: 9,
+          denomination_date: new Date("2026-07-07T00:00:00.000Z"),
+          thousand_count: 2,
+          five_hundred_count: 1,
+          one_hundred_count: 3,
+          fifty_count: 0,
+          twenty_count: 4,
+          ten_count: 0,
+          five_count: 0,
+          two_count: 5,
+          one_count: 6,
+          coin_10_count: 7,
+          coin_5_count: 0,
+          coin_2_count: 1,
+          coin_1_count: 2,
+          total_amount: 2970,
+          notes: "Counter verified",
+          created_at: new Date("2026-07-07T10:00:00.000Z"),
+          updated_at: new Date("2026-07-07T10:30:00.000Z"),
+        },
+      ])
+      .mockResolvedValueOnce([]);
+
+    await deleteDailyCashDenomination({
+      authenticatedUser: {
+        id: 9,
+        email: tellerUser.email,
+        role: USER_ROLES.TELLER,
+        branch_id: 3,
+      },
+      id: 11,
+    });
+
+    expect(query).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining("DELETE FROM daily_cash_denominations"),
+      [11, 9]
     );
   });
 });
