@@ -147,12 +147,20 @@ interface NormalizedDailyCashDenominationInput {
   totalAmount: number;
 }
 
+function formatDateOnly(value: Date): string {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
 function toDto(row: DailyCashDenominationRow): DailyCashDenominationDto {
   return {
     id: row.id,
     branchId: row.branch_id,
     tellerId: row.teller_id,
-    denominationDate: row.denomination_date.toISOString().slice(0, 10),
+    denominationDate: formatDateOnly(row.denomination_date),
     thousandCount: row.thousand_count,
     fiveHundredCount: row.five_hundred_count,
     oneHundredCount: row.one_hundred_count,
@@ -178,7 +186,7 @@ function toListItemDto(
 ): DailyCashDenominationListItemDto {
   return {
     id: row.id,
-    denomination_date: row.denomination_date.toISOString().slice(0, 10),
+    denomination_date: formatDateOnly(row.denomination_date),
     branch_name: row.branch_name,
     teller_name: row.teller_name,
     total_amount: Number(row.total_amount),

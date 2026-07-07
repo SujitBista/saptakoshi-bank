@@ -35,12 +35,25 @@ import { ApiError } from "@/lib/api-client";
 
 const actionButtonClass = "rounded-md px-2 py-1 text-xs font-medium";
 
-function formatDate(value: string): string {
-  return new Intl.DateTimeFormat("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(value));
+function formatDateOnly(dateString: string): string {
+  const [year, month, day] = dateString.split("-");
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const monthIndex = Number(month) - 1;
+
+  if (!year || !month || !day || monthIndex < 0 || monthIndex > 11) {
+    return dateString;
+  }
+
+  return `${day} ${monthNames[monthIndex]} ${year}`;
+}
+
+function getLocalDateString(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
 
 function formatDateTime(value: string): string {
@@ -55,6 +68,10 @@ function formatDateTime(value: string): string {
 
 function formatAmount(value: number): string {
   return new Intl.NumberFormat("en-NP").format(value);
+}
+
+function toDateOnly(value: string): string {
+  return value.slice(0, 10);
 }
 
 function denominationToFormValues(
@@ -96,6 +113,7 @@ export function DailyCashDenominationContent() {
   const [deleteEntry, setDeleteEntry] = useState<DailyCashDenominationListItem | null>(null);
   const [isDeleteLoading, setIsDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const today = getLocalDateString();
 
   const loadEntries = useCallback(async () => {
     setIsLoadingEntries(true);
@@ -222,6 +240,9 @@ export function DailyCashDenominationContent() {
     );
   }
 
+  const hasTodayEntry =
+    editingEntryId === null && entries.some((entry) => toDateOnly(entry.denomination_date) === today);
+
   return (
     <UserLayout
       userEmail={user.email}
@@ -273,12 +294,18 @@ export function DailyCashDenominationContent() {
               }
               onSuccess={handleEntrySaved}
               submitLabel={editingEntryId ? "Update Denomination" : "Save Denomination"}
-              successMessage={(denomination) =>
+              successMessage={() =>
                 editingEntryId
-                  ? `Daily cash denomination updated successfully for ${denomination.denominationDate}.`
-                  : `Daily cash denomination saved successfully for ${denomination.denominationDate}.`
+                  ? "Daily cash denomination updated successfully."
+                  : "Daily cash denomination saved successfully."
               }
               onCancel={editingEntryId ? handleCancelEdit : undefined}
+              isDisabled={hasTodayEntry}
+              disabledMessage={
+                hasTodayEntry
+                  ? "Daily cash denomination for today has already been submitted."
+                  : null
+              }
             />
             )}
           </CardContent>
@@ -324,7 +351,7 @@ export function DailyCashDenominationContent() {
                 <TableBody>
                   {entries.map((entry) => (
                     <TableRow key={entry.id}>
-                      <TableCell>{formatDate(entry.denomination_date)}</TableCell>
+                      <TableCell>{formatDateOnly(entry.denomination_date)}</TableCell>
                       <TableCell>{entry.branch_name}</TableCell>
                       <TableCell>{entry.teller_name}</TableCell>
                       <TableCell className="text-right font-medium">
@@ -380,11 +407,7 @@ export function DailyCashDenominationContent() {
       <Dialog
         open={deleteEntry !== null}
         title="Delete Denomination Entry"
-        description={
-          deleteEntry
-            ? `Delete the denomination entry for ${formatDate(deleteEntry.denomination_date)}?`
-            : undefined
-        }
+        description={deleteEntry ? "Delete this denomination entry?" : undefined}
         confirmLabel="Delete"
         isLoading={isDeleteLoading}
         variant="danger"
