@@ -6,6 +6,7 @@ import * as userRepository from "../repositories/user.repository";
 import {
   createDailyCashDenomination,
   DailyCashDenominationError,
+  listDailyCashDenominations,
 } from "./daily-cash-denomination.service";
 
 vi.mock("../config/database", async (importOriginal) => {
@@ -182,6 +183,105 @@ describe("createDailyCashDenomination", () => {
     ).rejects.toEqual(
       expect.objectContaining<Partial<DailyCashDenominationError>>({
         message: "branch_id, teller_id, and total_amount are controlled by the server",
+      })
+    );
+  });
+});
+
+describe("listDailyCashDenominations", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(userRepository.findById).mockResolvedValue(tellerUser);
+  });
+
+  it("lists only the authenticated teller's records with pagination", async () => {
+    vi.mocked(query)
+      .mockResolvedValueOnce([{ count: "2" }])
+      .mockResolvedValueOnce([
+        {
+          id: 15,
+          denomination_date: new Date("2026-07-08T00:00:00.000Z"),
+          branch_name: "Dharan Branch",
+          teller_name: "Sita Teller",
+          total_amount: "15000",
+          created_at: new Date("2026-07-08T09:30:00.000Z"),
+        },
+        {
+          id: 14,
+          denomination_date: new Date("2026-07-07T00:00:00.000Z"),
+          branch_name: "Dharan Branch",
+          teller_name: "Sita Teller",
+          total_amount: "12000",
+          created_at: new Date("2026-07-07T09:30:00.000Z"),
+        },
+      ]);
+
+    const result = await listDailyCashDenominations({
+      authenticatedUser: {
+        id: 9,
+        email: tellerUser.email,
+        role: USER_ROLES.TELLER,
+        branch_id: 3,
+      },
+      page: 1,
+      limit: 10,
+    });
+
+    expect(query).toHaveBeenNthCalledWith(
+      1,
+      expect.stringContaining("COUNT(*)::text AS count"),
+      [9]
+    );
+    expect(query).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining("WHERE d.teller_id = $1"),
+      [9, 10, 0]
+    );
+    expect(result).toEqual({
+      data: [
+        {
+          id: 15,
+          denomination_date: "2026-07-08",
+          branch_name: "Dharan Branch",
+          teller_name: "Sita Teller",
+          total_amount: 15000,
+          created_at: "2026-07-08T09:30:00.000Z",
+        },
+        {
+          id: 14,
+          denomination_date: "2026-07-07",
+          branch_name: "Dharan Branch",
+          teller_name: "Sita Teller",
+          total_amount: 12000,
+          created_at: "2026-07-07T09:30:00.000Z",
+        },
+      ],
+      page: 1,
+      limit: 10,
+      total: 2,
+      totalPages: 1,
+    });
+  });
+
+  it("rejects makers from listing denomination records", async () => {
+    vi.mocked(userRepository.findById).mockResolvedValue({
+      ...tellerUser,
+      role: USER_ROLES.MAKER,
+    });
+
+    await expect(
+      listDailyCashDenominations({
+        authenticatedUser: {
+          id: 9,
+          email: tellerUser.email,
+          role: USER_ROLES.MAKER,
+          branch_id: 3,
+        },
+      })
+    ).rejects.toEqual(
+      expect.objectContaining({
+        message: "Only tellers can add denominations",
+        statusCode: 403,
       })
     );
   });

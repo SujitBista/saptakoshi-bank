@@ -62,6 +62,23 @@ export interface DailyCashDenominationDto {
   updatedAt: string;
 }
 
+export interface DailyCashDenominationListItemDto {
+  id: number;
+  denomination_date: string;
+  branch_name: string;
+  teller_name: string;
+  total_amount: number;
+  created_at: string;
+}
+
+export interface DailyCashDenominationListResult {
+  data: DailyCashDenominationListItemDto[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
 export interface CreateDailyCashDenominationPayload {
   authenticatedUser: AuthenticatedUser;
   denominationDate?: unknown;
@@ -87,6 +104,10 @@ export interface CreateDailyCashDenominationPayload {
   teller_id?: unknown;
 }
 
+export const DEFAULT_DAILY_CASH_DENOMINATION_PAGE = 1;
+export const DEFAULT_DAILY_CASH_DENOMINATION_PAGE_SIZE = 10;
+export const MAX_DAILY_CASH_DENOMINATION_PAGE_SIZE = 100;
+
 const DENOMINATION_VALUES = {
   thousandCount: 1000,
   fiveHundredCount: 500,
@@ -104,6 +125,15 @@ const DENOMINATION_VALUES = {
 } as const;
 
 type DenominationCountKey = keyof typeof DENOMINATION_VALUES;
+
+interface DailyCashDenominationListRow {
+  id: number;
+  denomination_date: Date;
+  branch_name: string;
+  teller_name: string;
+  total_amount: string | number;
+  created_at: Date;
+}
 
 function toDto(row: DailyCashDenominationRow): DailyCashDenominationDto {
   return {
@@ -128,6 +158,19 @@ function toDto(row: DailyCashDenominationRow): DailyCashDenominationDto {
     notes: row.notes,
     createdAt: row.created_at.toISOString(),
     updatedAt: row.updated_at.toISOString(),
+  };
+}
+
+function toListItemDto(
+  row: DailyCashDenominationListRow
+): DailyCashDenominationListItemDto {
+  return {
+    id: row.id,
+    denomination_date: row.denomination_date.toISOString().slice(0, 10),
+    branch_name: row.branch_name,
+    teller_name: row.teller_name,
+    total_amount: Number(row.total_amount),
+    created_at: row.created_at.toISOString(),
   };
 }
 
@@ -372,4 +415,50 @@ export async function createDailyCashDenomination(
 
     throw error;
   }
+}
+
+export async function listDailyCashDenominations(filters: {
+  authenticatedUser: AuthenticatedUser;
+  page?: number;
+  limit?: number;
+}): Promise<DailyCashDenominationListResult> {
+  const currentUser = await getActiveTeller(filters.authenticatedUser);
+  const page = filters.page ?? DEFAULT_DAILY_CASH_DENOMINATION_PAGE;
+  const limit = filters.limit ?? DEFAULT_DAILY_CASH_DENOMINATION_PAGE_SIZE;
+  const offset = (page - 1) * limit;
+
+  const [countRows, rows] = await Promise.all([
+    query<{ count: string }>(
+      `SELECT COUNT(*)::text AS count
+       FROM daily_cash_denominations d
+       WHERE d.teller_id = $1`,
+      [currentUser.id]
+    ),
+    query<DailyCashDenominationListRow>(
+      `SELECT
+         d.id,
+         d.denomination_date,
+         b.branch_name,
+         u.full_name AS teller_name,
+         d.total_amount,
+         d.created_at
+       FROM daily_cash_denominations d
+       INNER JOIN branches b ON b.id = d.branch_id
+       INNER JOIN users u ON u.id = d.teller_id
+       WHERE d.teller_id = $1
+       ORDER BY d.created_at DESC, d.id DESC
+       LIMIT $2 OFFSET $3`,
+      [currentUser.id, limit, offset]
+    ),
+  ]);
+
+  const total = Number(countRows[0]?.count ?? 0);
+
+  return {
+    data: rows.map(toListItemDto),
+    page,
+    limit,
+    total,
+    totalPages: total === 0 ? 0 : Math.ceil(total / limit),
+  };
 }

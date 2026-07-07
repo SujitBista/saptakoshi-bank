@@ -57,3 +57,29 @@ export interface DailyCashDenomination {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface DailyCashDenominationListItem {
+  id: number;
+  denomination_date: string;
+  branch_name: string;
+  teller_name: string;
+  total_amount: number;
+  created_at: string;
+}
+
+export interface DailyCashDenominationListResponse {
+  data: DailyCashDenominationListItem[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export const DEFAULT_DAILY_CASH_DENOMINATION_PAGE = 1;
+export const DEFAULT_DAILY_CASH_DENOMINATION_PAGE_SIZE = 10;
+export const DAILY_CASH_DENOMINATION_PAGE_SIZE_OPTIONS = [10, 25, 50] as const;
+
+export interface DailyCashDenominationSearchFilters {
+  page?: number;
+  limit?: number;
+}

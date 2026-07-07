@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ApiError } from "@/lib/api-client";
 import { Button } from "@/components/ui/Button";
@@ -21,6 +21,7 @@ interface DailyCashDenominationFormProps {
   onSubmit: (
     values: DailyCashDenominationFormValues
   ) => Promise<DailyCashDenomination>;
+  onSuccess?: (denomination: DailyCashDenomination) => void | Promise<void>;
 }
 
 const defaultValues: DailyCashDenominationFormValues = {
@@ -52,14 +53,15 @@ function formatCurrency(value: number): string {
 
 export function DailyCashDenominationForm({
   onSubmit,
+  onSuccess,
 }: DailyCashDenominationFormProps) {
   const [apiError, setApiError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const {
+    control,
     register,
     handleSubmit,
-    watch,
     reset,
     formState: { errors, isSubmitting },
   } = useForm<DailyCashDenominationSchemaValues>({
@@ -67,7 +69,9 @@ export function DailyCashDenominationForm({
     defaultValues,
   });
 
-  const watchedValues = watch();
+  const watchedValues = useWatch({
+    control,
+  });
 
   const rowAmounts = useMemo(() => {
     return DENOMINATION_ROWS.reduce<Record<string, number>>((accumulator, row) => {
@@ -86,6 +90,7 @@ export function DailyCashDenominationForm({
 
     try {
       const denomination = await onSubmit(values);
+      await onSuccess?.(denomination);
       setSuccessMessage(
         `Daily cash denomination saved successfully for ${denomination.denominationDate}.`
       );

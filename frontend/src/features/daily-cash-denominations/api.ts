@@ -3,10 +3,27 @@ import { getToken } from "@/lib/auth";
 import type {
   DailyCashDenomination,
   DailyCashDenominationFormValues,
+  DailyCashDenominationListResponse,
+  DailyCashDenominationSearchFilters,
 } from "@/features/daily-cash-denominations/types";
 
 interface DailyCashDenominationResponse {
   denomination: DailyCashDenomination;
+}
+
+function buildSearchParams(filters: DailyCashDenominationSearchFilters): string {
+  const params = new URLSearchParams();
+
+  if (filters.page !== undefined) {
+    params.set("page", String(filters.page));
+  }
+
+  if (filters.limit !== undefined) {
+    params.set("limit", String(filters.limit));
+  }
+
+  const query = params.toString();
+  return query ? `?${query}` : "";
 }
 
 function toCount(value: string): number {
@@ -43,4 +60,13 @@ export async function createDailyCashDenomination(
   );
 
   return response.denomination;
+}
+
+export async function fetchDailyCashDenominations(
+  filters: DailyCashDenominationSearchFilters = {}
+): Promise<DailyCashDenominationListResponse> {
+  return apiClient<DailyCashDenominationListResponse>(
+    `/api/daily-cash-denominations${buildSearchParams(filters)}`,
+    { token: getToken() }
+  );
 }
