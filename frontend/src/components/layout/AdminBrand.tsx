@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 
 const LOGO_CANDIDATES = ["/logo.png", "/logo.svg"] as const;
@@ -11,6 +12,7 @@ export type AdminBrandVariant = "light" | "dark";
 export type AdminBrandProps = {
   size?: AdminBrandSize;
   variant?: AdminBrandVariant;
+  href?: string;
   showTagline?: boolean;
   tagline?: string;
   hideTaglineOnMobile?: boolean;
@@ -106,6 +108,7 @@ function AdminLogoImage({
 export function AdminBrand({
   size = "md",
   variant = "dark",
+  href = "/",
   showTagline = false,
   tagline = "Trusted Banking Partner",
   hideTaglineOnMobile = false,
@@ -116,7 +119,7 @@ export function AdminBrand({
   const isLight = variant === "light";
   const config = sizeConfig[size];
 
-  return (
+  const content = (
     <div className={`flex min-w-0 items-center gap-3 ${className}`}>
       <AdminLogoImage size={config.logoPx} variant={variant} />
 
@@ -149,5 +152,15 @@ export function AdminBrand({
         ) : null}
       </div>
     </div>
+  );
+
+  return (
+    <Link
+      href={href}
+      aria-label="Go to homepage"
+      className="inline-flex max-w-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-brand-blue"
+    >
+      {content}
+    </Link>
   );
 }

@@ -133,6 +133,7 @@ export function AdminLayout({
       <header className="border-b-4 border-brand-green bg-brand-blue text-white shadow-md">
         <div className="flex items-center justify-between gap-3 px-4 py-3 lg:gap-4 lg:px-6">
           <AdminBrand
+            href="/admin/dashboard"
             variant="light"
             size="sm"
             showAdminLabel

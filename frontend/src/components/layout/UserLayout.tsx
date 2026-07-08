@@ -72,6 +72,7 @@ export function UserLayout({
       <header className="border-b-4 border-brand-green bg-brand-blue text-white shadow-md">
         <div className="flex items-center justify-between gap-4 px-4 py-3 lg:px-6">
           <AdminBrand
+            href="/dashboard"
             variant="light"
             size="sm"
             showTagline
