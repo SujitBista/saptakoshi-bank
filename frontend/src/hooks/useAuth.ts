@@ -48,10 +48,10 @@ export function useAuth(options: UseAuthOptions = {}) {
   const resetPasswordPath = storedUser
     ? getResetPasswordPathForRole(storedUser.role)
     : null;
-  const isReady =
-    Boolean(storedUser) &&
-    isRoleAllowed(storedUser.role, requiredRole, allowedRoles) &&
-    (!storedUser.mustResetPassword || pathname === resetPasswordPath);
+  const isReady = storedUser
+    ? isRoleAllowed(storedUser.role, requiredRole, allowedRoles) &&
+      (!storedUser.mustResetPassword || pathname === resetPasswordPath)
+    : false;
 
   useEffect(() => {
     if (!isAuthenticated()) {
