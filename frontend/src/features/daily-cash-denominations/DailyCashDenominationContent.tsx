@@ -144,7 +144,7 @@ export function DailyCashDenominationContent() {
   }, [page, pageSize]);
 
   useEffect(() => {
-    if (!isReady || !user) {
+    if (!isReady) {
       return;
     }
 
@@ -153,7 +153,7 @@ export function DailyCashDenominationContent() {
     }, 0);
 
     return () => window.clearTimeout(timer);
-  }, [isReady, loadEntries, user]);
+  }, [isReady, loadEntries]);
 
   async function handleEntrySaved() {
     setEditingEntryId(null);
